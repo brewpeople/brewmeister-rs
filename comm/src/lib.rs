@@ -33,9 +33,9 @@ enum Command {
 }
 
 fn ack_byte_to(ack: u8) -> Result<()> {
-    if (ack | RESPONSE_ACK) != 0 {
+    if (ack & RESPONSE_ACK) != 0 {
         Ok(())
-    } else if (ack | RESPONSE_NACK) != 0 {
+    } else if (ack & RESPONSE_NACK) != 0 {
         Err(anyhow!("Received NACK"))
     } else {
         Err(anyhow!("Unexpected response"))
