@@ -19,9 +19,9 @@ struct State {
 }
 
 struct Model {
-    link: ComponentLink<Self>,
+    _link: ComponentLink<Self>,
     state: Arc<RwLock<State>>,
-    interval: Interval,
+    _interval: Interval,
 }
 
 async fn fetch_state() -> Result<State> {
@@ -41,9 +41,9 @@ impl Component for Model {
         let interval = Interval::new(1000, move || cloned.send_message(Message::Tick));
 
         Self {
-            link,
+            _link: link,
             state: Arc::new(RwLock::new(State::default())),
-            interval,
+            _interval: interval,
         }
     }
 
@@ -81,12 +81,24 @@ impl Component for Model {
         let state = self.state.clone();
 
         html! {
-            <div>
-                // <button onclick=self.link.callback(|_| Message::Fetch)>{ "fetch" }</button>
-                <p><emph>{ state.read().unwrap().temperature }</emph></p>
-                <p>{ state.read().unwrap().stirrer_on }</p>
-                <p>{ state.read().unwrap().heater_on }</p>
-            </div>
+            <>
+            <ybc::Container>
+                <ybc::Columns>
+                    <ybc::Column classes=classes!("is-size-1", "has-text-weight-bold")>
+                        { state.read().unwrap().temperature.round() }{"°C"}
+                    </ybc::Column>
+                    <ybc::Column classes=classes!("is-size-3", "has-text-weight-bold")>
+                        {"Stirrer on: "}{ if state.read().unwrap().stirrer_on { "yes" } else { "no" }}
+                    </ybc::Column>
+                    <ybc::Column classes=classes!("is-size-3", "has-text-weight-bold")>
+                        {"Heater on: "}{ if state.read().unwrap().heater_on { "yes" } else { "no" }}
+                    </ybc::Column>
+                </ybc::Columns>
+                <ybc::Columns>
+                    <ybc::Progress classes=classes!("is-primary") max=100.0 value=50.0/>
+                </ybc::Columns>
+            </ybc::Container>
+            </>
         }
     }
 }
