@@ -7,35 +7,29 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::RwLock;
 use tokio_serial::{SerialPortBuilderExt, SerialStream};
 
-/// Possible states of the stirrer.
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum StirrerState {
-    On,
-    Off,
-}
-
-/// Possible states of the heater.
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum HeaterState {
-    On,
-    Off,
-}
-
 /// Serial communication structure wrapping the Brewslave protocol.
 pub struct Comm {
     stream: Arc<RwLock<SerialStream>>,
 }
 
+/// Current state of the Brewslave.
+#[derive(Clone, Debug)]
+pub struct State {
+    pub temperature: f32,
+    pub stirrer_on: bool,
+    pub heater_on: bool,
+}
+
 const RESPONSE_ACK: u8 = 0x80;
 const RESPONSE_NACK: u8 = 0x40;
+const RESPONSE_STIRRER_BIT: u8 = 0x1;
+const RESPONSE_HEATER_BIT: u8 = 0x2;
 
 enum Command {
-    ReadTemperature = 0x1,
-    WriteTemperature = 0x2,
-    ReadStirrer = 0x4,
-    TurnStirrerOn = 0x5,
-    TurnStirrerOff = 0x6,
-    ReadHeater = 0x8,
+    ReadState = 0x1,
+    SetTemperature = 0x2,
+    TurnStirrerOn = 0x3,
+    TurnStirrerOff = 0x4,
 }
 
 fn ack_byte_to(ack: u8) -> Result<()> {
@@ -65,20 +59,24 @@ impl Comm {
         })
     }
 
-    /// Read the current temperature in degree Celsius.
-    pub async fn read_temperature(&self) -> Result<f32> {
+    /// Read the current state comprised of temperature and device states.
+    pub async fn read_state(&self) -> Result<State> {
         let mut stream = self.stream.write().await;
-        stream.write_u8(Command::ReadTemperature as u8).await?;
+        stream.write_u8(Command::ReadState as u8).await?;
 
-        let mut float_bytes: [u8; 4] = [0; 4];
-        stream.read_exact(&mut float_bytes).await?;
-        // stream.read_buf(
-        Ok(LittleEndian::read_f32(&float_bytes))
+        let mut response: [u8; 5] = [0; 5];
+        stream.read_exact(&mut response).await?;
+
+        Ok(State {
+            temperature: LittleEndian::read_f32(&response[0..4]),
+            stirrer_on: (response[4] & RESPONSE_STIRRER_BIT) != 0,
+            heater_on: (response[4] & RESPONSE_HEATER_BIT) != 0,
+        })
     }
 
     /// Write a new target temperature in degree Celsius the Brewslave is supposed to reach.
-    pub async fn write_temperature(&self, temperature: f32) -> Result<()> {
-        let mut command = vec![Command::WriteTemperature as u8, 0, 0, 0, 0];
+    pub async fn set_temperature(&self, temperature: f32) -> Result<()> {
+        let mut command = vec![Command::SetTemperature as u8, 0, 0, 0, 0];
         LittleEndian::write_f32(&mut command[1..], temperature);
 
         let mut stream = self.stream.write().await;
@@ -86,43 +84,15 @@ impl Comm {
         ack_byte_to(stream.read_u8().await?)
     }
 
-    /// Read current stirrer state.
-    pub async fn read_stirrer(&self) -> Result<StirrerState> {
-        let mut stream = self.stream.write().await;
-        stream.write_u8(Command::ReadStirrer as u8).await?;
-
-        let response = stream.read_u8().await?;
-
-        Ok(if response != 0 {
-            StirrerState::On
-        } else {
-            StirrerState::Off
-        })
-    }
-
     /// Write new stirrer state.
-    pub async fn write_stirrer(&self, state: StirrerState) -> Result<()> {
-        let command = match state {
-            StirrerState::On => Command::TurnStirrerOn as u8,
-            StirrerState::Off => Command::TurnStirrerOff as u8,
+    pub async fn write_stirrer(&self, stirrer_on: bool) -> Result<()> {
+        let command = match stirrer_on {
+            true => Command::TurnStirrerOn as u8,
+            false => Command::TurnStirrerOff as u8,
         };
 
         let mut stream = self.stream.write().await;
         stream.write_u8(command).await?;
         ack_byte_to(stream.read_u8().await?)
-    }
-
-    /// Read heater state.
-    pub async fn read_heater(&self) -> Result<HeaterState> {
-        let mut stream = self.stream.write().await;
-        stream.write_u8(Command::ReadHeater as u8).await?;
-
-        let response = stream.read_u8().await?;
-
-        Ok(if response != 0 {
-            HeaterState::On
-        } else {
-            HeaterState::Off
-        })
     }
 }

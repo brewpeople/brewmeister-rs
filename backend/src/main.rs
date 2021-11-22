@@ -61,9 +61,10 @@ async fn communicate(state: State) -> anyhow::Result<()> {
         interval.tick().await;
 
         let mut state = state.inner.write().await;
-        state.temperature = client.read_temperature().await?;
-        state.stirrer_on = client.read_stirrer().await? == comm::StirrerState::On;
-        state.heater_on = client.read_heater().await? == comm::HeaterState::On;
+        let current = client.read_state().await?;
+        state.temperature = current.temperature;
+        state.stirrer_on = current.stirrer_on;
+        state.heater_on = current.heater_on;
 
         debug!("read {:?}", state);
     }

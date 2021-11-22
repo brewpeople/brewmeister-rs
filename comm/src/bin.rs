@@ -38,23 +38,19 @@ async fn stress_test(client: comm::Comm) -> Result<()> {
 
     for _ in 0..num_iterations {
         let expected = rng.gen_range(20.0..100.0);
-        client.write_temperature(expected).await?;
-        let received = client.read_temperature().await?;
+        client.set_temperature(expected).await?;
+        let state = client.read_state().await?;
 
-        if (expected - received).abs() >= f32::EPSILON {
+        if (expected - state.temperature).abs() >= f32::EPSILON {
             bar.set_message("failed to r/w temperature");
             num_fails += 1;
         }
 
-        let expected = match rng.gen_bool(0.5) {
-            true => comm::StirrerState::On,
-            false => comm::StirrerState::Off,
-        };
-
+        let expected = rng.gen_bool(0.5);
         client.write_stirrer(expected).await?;
-        let received = client.read_stirrer().await?;
+        let state = client.read_state().await?;
 
-        if received != expected {
+        if state.stirrer_on != expected {
             bar.set_message("failed to r/w stirrer");
             num_fails += 1;
         }
@@ -84,16 +80,10 @@ async fn main() -> Result<()> {
             stress_test(client).await?;
         }
         Opt::Read {} => {
-
-            println!(
-                "temp={} stirrer_on={:?} heater_on={:?}",
-                client.read_temperature().await?,
-                client.read_stirrer().await?,
-                client.read_heater().await?,
-            );
+            println!("{:#?}", client.read_state().await?);
         }
         Opt::SetTemperature { target } => {
-            client.write_temperature(target).await?;
+            client.set_temperature(target).await?;
         }
     };
 
