@@ -4,7 +4,6 @@ use axum::http::{Method, Response, StatusCode};
 use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::{AddExtensionLayer, Json, Router};
-use serde::Serialize;
 use std::convert::Infallible;
 use std::sync::Arc;
 use thiserror::Error;
@@ -20,32 +19,13 @@ enum AppError {
     IoError(#[from] std::io::Error),
 }
 
-#[derive(Clone, Debug, Default, Serialize)]
-struct Inner {
-    current_temperature: f32,
-    target_temperature: f32,
-    stirrer_on: bool,
-    heater_on: bool,
-}
-
-impl From<comm::State> for Inner {
-    fn from(s: comm::State) -> Self {
-        Self {
-            current_temperature: s.current_temperature,
-            target_temperature: s.target_temperature,
-            stirrer_on: s.stirrer_on,
-            heater_on: s.heater_on,
-        }
-    }
-}
-
 #[derive(Clone, Debug)]
 struct State {
-    inner: Arc<RwLock<Inner>>,
+    inner: Arc<RwLock<models::State>>,
 }
 
 #[instrument]
-async fn get_state(Extension(state): Extension<State>) -> Json<Inner> {
+async fn get_state(Extension(state): Extension<State>) -> Json<models::State> {
     let state = state.inner.read().await;
     Json(state.clone())
 }
@@ -74,7 +54,14 @@ async fn communicate(state: State) -> anyhow::Result<()> {
 
         let mut state = state.inner.write().await;
         let current = client.read_state().await?;
-        *state = current.into();
+
+        // We could impl `From<comm::State>` in `models` however that pulls in comm into the `app`
+        // frontend which makes targetting wasm32-unknown-unknown a bit painful.
+        state.current_temperature = current.current_temperature;
+        state.target_temperature = current.target_temperature;
+        state.stirrer_on = current.stirrer_on;
+        state.heater_on = current.heater_on;
+
         debug!("read {:?}", state);
     }
 }
@@ -103,7 +90,7 @@ async fn main() -> anyhow::Result<()> {
     env_logger::init();
 
     let state = State {
-        inner: Arc::new(RwLock::new(Inner::default())),
+        inner: Arc::new(RwLock::new(models::State::default())),
     };
 
     let server_future = run_server(state.clone());

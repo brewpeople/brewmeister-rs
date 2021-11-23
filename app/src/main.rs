@@ -1,7 +1,6 @@
 use anyhow::Result;
 use gloo::timers::callback::Interval;
 use gloo_console::log;
-use serde::Deserialize;
 use yew::prelude::*;
 use reqwasm::http;
 use std::sync::{Arc, RwLock};
@@ -11,21 +10,13 @@ enum Message {
     Tick,
 }
 
-#[derive(Default, Deserialize)]
-struct State {
-    current_temperature: f32,
-    target_temperature: f32,
-    stirrer_on: bool,
-    heater_on: bool,
-}
-
 struct Model {
     _link: ComponentLink<Self>,
-    state: Arc<RwLock<State>>,
+    state: Arc<RwLock<models::State>>,
     _interval: Interval,
 }
 
-async fn fetch_state() -> Result<State> {
+async fn fetch_state() -> Result<models::State> {
     Ok(http::Request::get("http://0.0.0.0:3000/state")
         .send()
         .await?
@@ -43,7 +34,7 @@ impl Component for Model {
 
         Self {
             _link: link,
-            state: Arc::new(RwLock::new(State::default())),
+            state: Arc::new(RwLock::new(models::State::default())),
             _interval: interval,
         }
     }
