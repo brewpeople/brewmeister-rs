@@ -41,7 +41,7 @@ async fn stress_test(client: comm::Comm) -> Result<()> {
         client.set_temperature(expected).await?;
         let state = client.read_state().await?;
 
-        if (expected - state.temperature).abs() >= f32::EPSILON {
+        if (expected - state.current_temperature).abs() >= f32::EPSILON {
             bar.set_message("failed to r/w temperature");
             num_fails += 1;
         }

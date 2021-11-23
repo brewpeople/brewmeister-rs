@@ -13,7 +13,8 @@ enum Message {
 
 #[derive(Default, Deserialize)]
 struct State {
-    temperature: f32,
+    current_temperature: f32,
+    target_temperature: f32,
     stirrer_on: bool,
     heater_on: bool,
 }
@@ -85,7 +86,8 @@ impl Component for Model {
             <ybc::Container>
                 <ybc::Columns>
                     <ybc::Column classes=classes!("is-size-1", "has-text-weight-bold")>
-                        { state.read().unwrap().temperature.round() }{"°C"}
+                        { state.read().unwrap().current_temperature.round() }{"°C ("}
+                        { state.read().unwrap().target_temperature.round() }{"°C)"}
                     </ybc::Column>
                     <ybc::Column classes=classes!("is-size-3", "has-text-weight-bold")>
                         {"Stirrer on: "}{ if state.read().unwrap().stirrer_on { "yes" } else { "no" }}

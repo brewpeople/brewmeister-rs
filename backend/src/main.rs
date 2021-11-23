@@ -22,9 +22,21 @@ enum AppError {
 
 #[derive(Clone, Debug, Default, Serialize)]
 struct Inner {
-    temperature: f32,
+    current_temperature: f32,
+    target_temperature: f32,
     stirrer_on: bool,
     heater_on: bool,
+}
+
+impl From<comm::State> for Inner {
+    fn from(s: comm::State) -> Self {
+        Self {
+            current_temperature: s.current_temperature,
+            target_temperature: s.target_temperature,
+            stirrer_on: s.stirrer_on,
+            heater_on: s.heater_on,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -62,10 +74,7 @@ async fn communicate(state: State) -> anyhow::Result<()> {
 
         let mut state = state.inner.write().await;
         let current = client.read_state().await?;
-        state.temperature = current.temperature;
-        state.stirrer_on = current.stirrer_on;
-        state.heater_on = current.heater_on;
-
+        *state = current.into();
         debug!("read {:?}", state);
     }
 }
