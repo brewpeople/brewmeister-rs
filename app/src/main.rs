@@ -75,20 +75,33 @@ impl Component for Model {
         html! {
             <>
             <ybc::Container>
+                <ybc::Navbar
+                    navbrand=html!{}
+                    navstart=html!{
+                        <>
+                        <ybc::NavbarItem classes=classes!("is-size-1", "has-text-weight-bold")>
+                            { state.read().unwrap().current_temperature.round() }{"°C"}
+                        </ybc::NavbarItem>
+                        <ybc::NavbarItem classes=classes!("is-size-4")>
+                            { state.read().unwrap().target_temperature.round() }{"°C"}
+                        </ybc::NavbarItem>
+                        </>
+                    }
+                    navend=html!{
+                        <>
+                        <ybc::NavbarItem classes=classes!("is-size-4")>
+                            {"Heater "}{ if state.read().unwrap().heater_on { "on" } else { "off" }}
+                        </ybc::NavbarItem>
+                        <ybc::NavbarItem classes=classes!("is-size-4")>
+                            {"Stirrer "}{ if state.read().unwrap().stirrer_on { "on" } else { "off" }}
+                        </ybc::NavbarItem>
+                        </>
+                    }
+                />
                 <ybc::Columns>
-                    <ybc::Column classes=classes!("is-size-1", "has-text-weight-bold")>
-                        { state.read().unwrap().current_temperature.round() }{"°C ("}
-                        { state.read().unwrap().target_temperature.round() }{"°C)"}
+                    <ybc::Column>
+                        <ybc::Progress classes=classes!("is-primary") max=100.0 value=50.0/>
                     </ybc::Column>
-                    <ybc::Column classes=classes!("is-size-3", "has-text-weight-bold")>
-                        {"Stirrer on: "}{ if state.read().unwrap().stirrer_on { "yes" } else { "no" }}
-                    </ybc::Column>
-                    <ybc::Column classes=classes!("is-size-3", "has-text-weight-bold")>
-                        {"Heater on: "}{ if state.read().unwrap().heater_on { "yes" } else { "no" }}
-                    </ybc::Column>
-                </ybc::Columns>
-                <ybc::Columns>
-                    <ybc::Progress classes=classes!("is-primary") max=100.0 value=50.0/>
                 </ybc::Columns>
             </ybc::Container>
             </>
