@@ -1,3 +1,6 @@
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
 use anyhow::Result;
 use gloo::timers::callback::Interval;
 use gloo_console::log;
