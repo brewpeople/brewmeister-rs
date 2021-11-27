@@ -4,10 +4,10 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 use anyhow::Result;
 use gloo::timers::callback::Interval;
 use gloo_console::log;
-use yew::prelude::*;
 use reqwasm::http;
 use std::sync::{Arc, RwLock};
 use wasm_bindgen_futures::spawn_local;
+use yew::prelude::*;
 
 enum Message {
     Tick,

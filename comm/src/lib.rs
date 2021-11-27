@@ -15,7 +15,7 @@ pub enum Error {
     #[error("Tokio I/O error")]
     TokioIo(#[from] tokio::io::Error),
     #[error("Tokio Serial error")]
-    TokioSerial(#[from] tokio_serial::Error)
+    TokioSerial(#[from] tokio_serial::Error),
 }
 
 /// Serial communication structure wrapping the Brewslave protocol.

@@ -7,8 +7,7 @@ fn parse_temperature(src: &str) -> Result<f32> {
 
     if temperature < 20.0 || temperature > 99.0 {
         Err(anyhow!("Temperature must be between [20, 99]"))
-    }
-    else {
+    } else {
         Ok(temperature)
     }
 }
