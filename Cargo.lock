@@ -250,6 +250,7 @@ dependencies = [
  "rand",
  "serialport",
  "structopt",
+ "thiserror",
  "tokio",
  "tokio-serial",
 ]

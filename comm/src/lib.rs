@@ -1,11 +1,22 @@
 //! Serial communication with the Brewslave.
 
-use anyhow::{anyhow, Result};
 use byteorder::{ByteOrder, LittleEndian};
 use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::RwLock;
 use tokio_serial::{SerialPortBuilderExt, SerialStream};
+
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("Received NACK")]
+    Nack,
+    #[error("Received unexpected data")]
+    UnexpectedData,
+    #[error("Tokio I/O error")]
+    TokioIo(#[from] tokio::io::Error),
+    #[error("Tokio Serial error")]
+    TokioSerial(#[from] tokio_serial::Error)
+}
 
 /// Serial communication structure wrapping the Brewslave protocol.
 pub struct Comm {
@@ -33,13 +44,13 @@ enum Command {
     TurnStirrerOff = 0x4,
 }
 
-fn ack_byte_to(ack: u8) -> Result<()> {
+fn ack_byte_to(ack: u8) -> Result<(), Error> {
     if (ack & RESPONSE_ACK) != 0 {
         Ok(())
     } else if (ack & RESPONSE_NACK) != 0 {
-        Err(anyhow!("Received NACK"))
+        Err(Error::Nack)
     } else {
-        Err(anyhow!("Unexpected response"))
+        Err(Error::UnexpectedData)
     }
 }
 
@@ -47,7 +58,7 @@ impl Comm {
     /// Create a new communication structure.
     ///
     /// As of now, it tries to open `/dev/tty/ACM0`.
-    pub fn new() -> Result<Self> {
+    pub fn new() -> Result<Self, Error> {
         let stream = tokio_serial::new("/dev/ttyACM0", 115200)
             .flow_control(tokio_serial::FlowControl::None)
             .data_bits(tokio_serial::DataBits::Eight)
@@ -61,7 +72,7 @@ impl Comm {
     }
 
     /// Read the current state comprised of temperature and device states.
-    pub async fn read_state(&self) -> Result<State> {
+    pub async fn read_state(&self) -> Result<State, Error> {
         let mut stream = self.stream.write().await;
         stream.write_u8(Command::ReadState as u8).await?;
 
@@ -82,7 +93,7 @@ impl Comm {
     }
 
     /// Write a new target temperature in degree Celsius the Brewslave is supposed to reach.
-    pub async fn set_temperature(&self, temperature: f32) -> Result<()> {
+    pub async fn set_temperature(&self, temperature: f32) -> Result<(), Error> {
         let mut command = vec![Command::SetTemperature as u8, 0, 0, 0, 0];
         LittleEndian::write_f32(&mut command[1..], temperature);
 
@@ -92,7 +103,7 @@ impl Comm {
     }
 
     /// Write new stirrer state.
-    pub async fn write_stirrer(&self, stirrer_on: bool) -> Result<()> {
+    pub async fn write_stirrer(&self, stirrer_on: bool) -> Result<(), Error> {
         let command = match stirrer_on {
             true => Command::TurnStirrerOn as u8,
             false => Command::TurnStirrerOff as u8,
