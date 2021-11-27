@@ -4,6 +4,7 @@ use byteorder::{ByteOrder, LittleEndian};
 use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::RwLock;
+use tokio::time::{timeout, Duration};
 use tokio_serial::{SerialPortBuilderExt, SerialStream};
 
 #[derive(thiserror::Error, Debug)]
@@ -16,6 +17,8 @@ pub enum Error {
     TokioIo(#[from] tokio::io::Error),
     #[error("Tokio Serial error")]
     TokioSerial(#[from] tokio_serial::Error),
+    #[error("Serial I/O timeout")]
+    Timeout(#[from] tokio::time::error::Elapsed),
 }
 
 /// Serial communication structure wrapping the Brewslave protocol.
@@ -80,9 +83,9 @@ impl Comm {
         let mut target: [u8; 4] = [0; 4];
         let mut state: [u8; 1] = [0; 1];
 
-        stream.read_exact(&mut current).await?;
-        stream.read_exact(&mut target).await?;
-        stream.read_exact(&mut state).await?;
+        timeout(Duration::from_secs(1), stream.read_exact(&mut current)).await??;
+        timeout(Duration::from_secs(1), stream.read_exact(&mut target)).await??;
+        timeout(Duration::from_secs(1), stream.read_exact(&mut state)).await??;
 
         Ok(State {
             current_temperature: LittleEndian::read_f32(&current),

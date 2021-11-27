@@ -7,4 +7,5 @@ pub struct State {
     pub target_temperature: f32,
     pub stirrer_on: bool,
     pub heater_on: bool,
+    pub serial_problem: bool,
 }
