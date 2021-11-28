@@ -73,7 +73,13 @@ impl Component for Model {
     }
 
     fn view(&self) -> Html {
-        let state = self.state.clone();
+        let state = self.state.clone().read().unwrap().clone();
+
+        let (current, target) = if !state.serial_problem {
+            (format!("{}°C", state.current_temperature.round()), format!("{}°C", state.target_temperature.round()))
+        } else {
+            ("Disconnected".to_string(), "".to_string())
+        };
 
         html! {
             <>
@@ -83,20 +89,20 @@ impl Component for Model {
                     navstart=html!{
                         <>
                         <ybc::NavbarItem classes=classes!("is-size-1", "has-text-weight-bold")>
-                            { state.read().unwrap().current_temperature.round() }{"°C"}
+                            { current }
                         </ybc::NavbarItem>
                         <ybc::NavbarItem classes=classes!("is-size-4")>
-                            { state.read().unwrap().target_temperature.round() }{"°C"}
+                            { target }
                         </ybc::NavbarItem>
                         </>
                     }
                     navend=html!{
                         <>
                         <ybc::NavbarItem classes=classes!("is-size-4")>
-                            {"Heater "}{ if state.read().unwrap().heater_on { "on" } else { "off" }}
+                            {"Heater "}{ if state.heater_on { "on" } else { "off" }}
                         </ybc::NavbarItem>
                         <ybc::NavbarItem classes=classes!("is-size-4")>
-                            {"Stirrer "}{ if state.read().unwrap().stirrer_on { "on" } else { "off" }}
+                            {"Stirrer "}{ if state.stirrer_on { "on" } else { "off" }}
                         </ybc::NavbarItem>
                         </>
                     }
