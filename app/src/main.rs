@@ -1,13 +1,17 @@
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+mod components;
+
 use anyhow::Result;
+use components::temperature::Temperature;
 use gloo::timers::callback::Interval;
 use gloo_console::log;
 use reqwasm::http;
 use std::sync::{Arc, RwLock};
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
+
 
 enum Message {
     Tick,
@@ -74,9 +78,9 @@ impl Component for Model {
         let state = self.state.clone().read().unwrap().clone();
 
         let (current, target) = if !state.serial_problem {
-            (format!("{}°C", state.current_temperature.round()), format!("{}°C", state.target_temperature.round()))
+            (state.current_temperature, state.target_temperature)
         } else {
-            ("Disconnected".to_string(), "".to_string())
+            (0.0, 0.0)
         };
 
         html! {
@@ -84,7 +88,8 @@ impl Component for Model {
             <ybc::Container>
                 <ybc::Columns>
                     <ybc::Column>
-                        { current } { target }
+                        <Temperature temperature={current} emphasize=true/>
+                        <Temperature temperature={target} emphasize=false/>
                     </ybc::Column>
                     <ybc::Column>
                         <ybc::Progress classes={classes!("is-primary")} max=100.0 value=50.0/>
