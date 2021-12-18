@@ -14,7 +14,6 @@ enum Message {
 }
 
 struct Model {
-    _link: ComponentLink<Self>,
     state: Arc<RwLock<models::State>>,
     _interval: Interval,
 }
@@ -31,18 +30,17 @@ impl Component for Model {
     type Message = Message;
     type Properties = ();
 
-    fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let cloned = link.clone();
-        let interval = Interval::new(1000, move || cloned.send_message(Message::Tick));
+    fn create(ctx: &Context<Self>) -> Self {
+        let link = ctx.link().clone();
+        let interval = Interval::new(1000, move || link.send_message(Message::Tick));
 
         Self {
-            _link: link,
             state: Arc::new(RwLock::new(models::State::default())),
             _interval: interval,
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Message::Tick => {
                 let state = self.state.clone();
@@ -68,11 +66,11 @@ impl Component for Model {
         }
     }
 
-    fn change(&mut self, _props: Self::Properties) -> ShouldRender {
+    fn changed(&mut self, _ctx: &Context<Self>) -> bool {
         false
     }
 
-    fn view(&self) -> Html {
+    fn view(&self, _ctx: &Context<Self>) -> Html {
         let state = self.state.clone().read().unwrap().clone();
 
         let (current, target) = if !state.serial_problem {
@@ -84,32 +82,12 @@ impl Component for Model {
         html! {
             <>
             <ybc::Container>
-                <ybc::Navbar
-                    navbrand=html!{}
-                    navstart=html!{
-                        <>
-                        <ybc::NavbarItem classes=classes!("is-size-1", "has-text-weight-bold")>
-                            { current }
-                        </ybc::NavbarItem>
-                        <ybc::NavbarItem classes=classes!("is-size-4")>
-                            { target }
-                        </ybc::NavbarItem>
-                        </>
-                    }
-                    navend=html!{
-                        <>
-                        <ybc::NavbarItem classes=classes!("is-size-4")>
-                            {"Heater "}{ if state.heater_on { "on" } else { "off" }}
-                        </ybc::NavbarItem>
-                        <ybc::NavbarItem classes=classes!("is-size-4")>
-                            {"Stirrer "}{ if state.stirrer_on { "on" } else { "off" }}
-                        </ybc::NavbarItem>
-                        </>
-                    }
-                />
                 <ybc::Columns>
                     <ybc::Column>
-                        <ybc::Progress classes=classes!("is-primary") max=100.0 value=50.0/>
+                        { current } { target }
+                    </ybc::Column>
+                    <ybc::Column>
+                        <ybc::Progress classes={classes!("is-primary")} max=100.0 value=50.0/>
                     </ybc::Column>
                 </ybc::Columns>
             </ybc::Container>
