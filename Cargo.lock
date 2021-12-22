@@ -64,6 +64,7 @@ dependencies = [
  "env_logger",
  "log",
  "models",
+ "structopt",
  "thiserror",
  "tokio",
  "tower",

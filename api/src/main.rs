@@ -7,6 +7,7 @@ use axum::routing::get;
 use axum::{AddExtensionLayer, Json, Router};
 use std::convert::Infallible;
 use std::sync::Arc;
+use structopt::StructOpt;
 use thiserror::Error;
 use tokio::sync::RwLock;
 use tokio::try_join;
@@ -15,6 +16,13 @@ use tower_http::cors::{CorsLayer, Origin};
 use tracing::{error, instrument};
 
 mod devices;
+
+#[derive(StructOpt)]
+struct Opt {
+    /// Use a mock device instead of the real Arduino Brewslave
+    #[structopt(long)]
+    use_mock: bool,
+}
 
 #[derive(Debug, Error)]
 enum AppError {
@@ -68,15 +76,24 @@ async fn run_server(state: State) -> anyhow::Result<()> {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     env_logger::init();
+    let opts = Opt::from_args();
 
     let state = State {
         inner: Arc::new(RwLock::new(models::State::default())),
     };
 
     let server_future = run_server(state.clone());
-    let brewslave = crate::devices::brewslave::Brewslave::new()?;
-    let comm_future = brewslave.communicate(state);
-    try_join!(server_future, comm_future)?;
+
+    if opts.use_mock {
+        let device = crate::devices::mock::Mock::new();
+        let comm_future = device.communicate(state);
+        try_join!(server_future, comm_future)?;
+    } else {
+        let device = crate::devices::brewslave::Brewslave::new()?;
+        let comm_future = device.communicate(state);
+        try_join!(server_future, comm_future)?;
+    }
+
 
     Ok(())
 }

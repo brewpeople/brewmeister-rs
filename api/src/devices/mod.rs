@@ -1,6 +1,7 @@
 use crate::State;
 
 pub mod brewslave;
+pub mod mock;
 
 #[async_trait::async_trait]
 pub trait Device {
