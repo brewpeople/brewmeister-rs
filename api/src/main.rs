@@ -1,3 +1,4 @@
+use crate::devices::Device;
 use axum::body::{Bytes, Full};
 use axum::extract::Extension;
 use axum::http::{Method, Response, StatusCode};
@@ -11,7 +12,9 @@ use tokio::sync::RwLock;
 use tokio::try_join;
 use tower::ServiceBuilder;
 use tower_http::cors::{CorsLayer, Origin};
-use tracing::{debug, error, instrument};
+use tracing::{error, instrument};
+
+mod devices;
 
 #[derive(Debug, Error)]
 enum AppError {
@@ -20,7 +23,7 @@ enum AppError {
 }
 
 #[derive(Clone, Debug)]
-struct State {
+pub struct State {
     inner: Arc<RwLock<models::State>>,
 }
 
@@ -40,36 +43,6 @@ impl IntoResponse for AppError {
         };
 
         tuple.into_response()
-    }
-}
-
-/// Set up the serial connection and poll for new temperature, stirrer and heater values.
-#[instrument]
-async fn communicate(state: State) -> anyhow::Result<()> {
-    let client = comm::Comm::new()?;
-    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
-
-    loop {
-        interval.tick().await;
-
-        let mut state = state.inner.write().await;
-
-        match client.read_state().await {
-            Ok(current) => {
-                // We could impl `From<comm::State>` in `models` however that pulls in comm into
-                // the `app` frontend which makes targetting wasm32-unknown-unknown a bit painful.
-                state.current_temperature = current.current_temperature;
-                state.target_temperature = current.target_temperature;
-                state.stirrer_on = current.stirrer_on;
-                state.heater_on = current.heater_on;
-                state.serial_problem = false;
-                debug!("read {:?}", state);
-            }
-            Err(err) => {
-                error!("{}", err);
-                state.serial_problem = true;
-            }
-        }
     }
 }
 
@@ -101,7 +74,8 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let server_future = run_server(state.clone());
-    let comm_future = communicate(state);
+    let brewslave = crate::devices::brewslave::Brewslave::new()?;
+    let comm_future = brewslave.communicate(state);
     try_join!(server_future, comm_future)?;
 
     Ok(())

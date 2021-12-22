@@ -8,6 +8,7 @@ edition = "2018"
 [dependencies]
 anyhow = "1"
 axum = "0.3"
+async-trait = "*"
 comm = { path = "../comm" }
 log = "0"
 env_logger = "0"

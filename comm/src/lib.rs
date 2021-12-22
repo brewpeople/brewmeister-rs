@@ -22,6 +22,7 @@ pub enum Error {
 }
 
 /// Serial communication structure wrapping the Brewslave protocol.
+#[derive(Debug)]
 pub struct Comm {
     stream: Arc<RwLock<SerialStream>>,
 }
