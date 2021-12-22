@@ -12,7 +12,6 @@ use std::sync::{Arc, RwLock};
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
-
 enum Message {
     Tick,
 }

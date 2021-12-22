@@ -1,4 +1,4 @@
-use yew::{function_component, html, classes, Properties};
+use yew::{classes, function_component, html, Properties};
 
 #[derive(Properties, PartialEq)]
 pub struct TemperatureProps {
@@ -10,8 +10,7 @@ pub struct TemperatureProps {
 pub fn temperature(props: &TemperatureProps) -> Html {
     let class = if props.emphasize {
         vec!["has-text-weight-bold", "is-size-1"]
-    }
-    else {
+    } else {
         vec!["is-size-4"]
     };
 
