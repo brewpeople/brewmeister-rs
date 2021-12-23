@@ -91,11 +91,11 @@ where
                 state.stirrer_on = new.stirrer_on;
                 state.heater_on = new.heater_on;
                 state.serial_problem = false;
-            },
+            }
             Err(err) => {
                 error!("Error reading from device: {}", err);
                 state.serial_problem = true;
-            },
+            }
         }
     }
 }

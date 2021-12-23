@@ -15,7 +15,6 @@ impl Mock {
 
 #[async_trait::async_trait]
 impl Device for Mock {
-    /// Set up the serial connection and poll for new temperature, stirrer and heater values.
     #[instrument]
     async fn read(&self) -> anyhow::Result<State> {
         Ok(State {
@@ -25,5 +24,11 @@ impl Device for Mock {
             heater_on: false,
             serial_problem: false,
         })
+    }
+
+    #[instrument]
+    async fn set_temperature(&mut self, temperature: f32) -> anyhow::Result<()> {
+        self.temperature = temperature;
+        Ok(())
     }
 }

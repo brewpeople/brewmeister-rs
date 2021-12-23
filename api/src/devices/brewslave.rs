@@ -31,4 +31,9 @@ impl Device for Brewslave {
             serial_problem: false,
         })
     }
+
+    #[instrument]
+    async fn set_temperature(&mut self, temperature: f32) -> anyhow::Result<()> {
+        Ok(self.client.set_temperature(temperature).await?)
+    }
 }
