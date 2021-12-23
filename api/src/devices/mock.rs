@@ -1,5 +1,5 @@
 use crate::devices::Device;
-use crate::State;
+use models::State;
 use tracing::instrument;
 
 #[derive(Debug)]
@@ -9,9 +9,7 @@ pub struct Mock {
 
 impl Mock {
     pub fn new() -> Self {
-        Self {
-            temperature: 20.0,
-        }
+        Self { temperature: 20.0 }
     }
 }
 
@@ -19,18 +17,13 @@ impl Mock {
 impl Device for Mock {
     /// Set up the serial connection and poll for new temperature, stirrer and heater values.
     #[instrument]
-    async fn communicate(&self, state: State) -> anyhow::Result<()> {
-        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
-
-        loop {
-            interval.tick().await;
-
-            let mut state = state.inner.write().await;
-            state.current_temperature = self.temperature;
-            state.target_temperature = self.temperature;
-            state.stirrer_on = false;
-            state.heater_on = false;
-            state.serial_problem = false;
-        }
+    async fn read(&self) -> anyhow::Result<State> {
+        Ok(State {
+            current_temperature: self.temperature,
+            target_temperature: self.temperature,
+            stirrer_on: false,
+            heater_on: false,
+            serial_problem: false,
+        })
     }
 }

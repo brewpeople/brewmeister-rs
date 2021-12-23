@@ -1,4 +1,3 @@
-use crate::devices::Device;
 use axum::body::{Bytes, Full};
 use axum::extract::Extension;
 use axum::http::{Method, Response, StatusCode};
@@ -73,6 +72,34 @@ async fn run_server(state: State) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[instrument]
+async fn communicate<D>(device: D, state: State) -> anyhow::Result<()>
+where
+    D: crate::devices::Device + std::fmt::Debug,
+{
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
+
+    loop {
+        interval.tick().await;
+
+        let mut state = state.inner.write().await;
+
+        match device.read().await {
+            Ok(new) => {
+                state.current_temperature = new.current_temperature;
+                state.target_temperature = new.current_temperature;
+                state.stirrer_on = new.stirrer_on;
+                state.heater_on = new.heater_on;
+                state.serial_problem = false;
+            },
+            Err(err) => {
+                error!("Error reading from device: {}", err);
+                state.serial_problem = true;
+            },
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     env_logger::init();
@@ -86,14 +113,13 @@ async fn main() -> anyhow::Result<()> {
 
     if opts.use_mock {
         let device = crate::devices::mock::Mock::new();
-        let comm_future = device.communicate(state);
+        let comm_future = communicate(device, state);
         try_join!(server_future, comm_future)?;
     } else {
         let device = crate::devices::brewslave::Brewslave::new()?;
-        let comm_future = device.communicate(state);
+        let comm_future = communicate(device, state);
         try_join!(server_future, comm_future)?;
     }
-
 
     Ok(())
 }

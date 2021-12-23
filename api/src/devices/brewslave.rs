@@ -1,6 +1,6 @@
 use crate::devices::Device;
-use crate::State;
-use tracing::{debug, error, instrument};
+use models::State;
+use tracing::{debug, instrument};
 
 #[derive(Debug)]
 pub struct Brewslave {
@@ -19,30 +19,16 @@ impl Brewslave {
 impl Device for Brewslave {
     /// Set up the serial connection and poll for new temperature, stirrer and heater values.
     #[instrument]
-    async fn communicate(&self, state: State) -> anyhow::Result<()> {
-        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
+    async fn read(&self) -> anyhow::Result<State> {
+        let state = self.client.read_state().await?;
+        debug!("read {:?}", state);
 
-        loop {
-            interval.tick().await;
-
-            let mut state = state.inner.write().await;
-
-            match self.client.read_state().await {
-                Ok(current) => {
-                    // We could impl `From<comm::State>` in `models` however that pulls in comm into
-                    // the `app` frontend which makes targetting wasm32-unknown-unknown a bit painful.
-                    state.current_temperature = current.current_temperature;
-                    state.target_temperature = current.target_temperature;
-                    state.stirrer_on = current.stirrer_on;
-                    state.heater_on = current.heater_on;
-                    state.serial_problem = false;
-                    debug!("read {:?}", state);
-                }
-                Err(err) => {
-                    error!("{}", err);
-                    state.serial_problem = true;
-                }
-            }
-        }
+        Ok(State {
+            current_temperature: state.current_temperature,
+            target_temperature: state.target_temperature,
+            stirrer_on: state.stirrer_on,
+            heater_on: state.heater_on,
+            serial_problem: false,
+        })
     }
 }

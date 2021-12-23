@@ -1,9 +1,9 @@
-use crate::State;
+use models::State;
 
 pub mod brewslave;
 pub mod mock;
 
 #[async_trait::async_trait]
 pub trait Device {
-    async fn communicate(&self, state: State) -> anyhow::Result<()>;
+    async fn read(&self) -> anyhow::Result<State>;
 }
