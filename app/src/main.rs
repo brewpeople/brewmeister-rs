@@ -11,6 +11,16 @@ use reqwasm::http;
 use std::sync::{Arc, RwLock};
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
+use yew_router::prelude::*;
+
+#[derive(Clone, PartialEq, Routable)]
+enum Route {
+    #[at("/")]
+    Home,
+    #[not_found]
+    #[at("/404")]
+    NotFound,
+}
 
 enum Message {
     Tick,
@@ -83,20 +93,28 @@ impl Component for Model {
         };
 
         html! {
-            <>
-            <ybc::Container>
-                <ybc::Columns>
-                    <ybc::Column>
-                        <Temperature temperature={current} emphasize=true/>
-                        <Temperature temperature={target} emphasize=false/>
-                    </ybc::Column>
-                    <ybc::Column>
-                        <ybc::Progress classes={classes!("is-primary")} max=100.0 value=50.0/>
-                    </ybc::Column>
-                </ybc::Columns>
-            </ybc::Container>
-            </>
+            <BrowserRouter>
+                <ybc::Container>
+                    <ybc::Columns>
+                        <ybc::Column>
+                            <Temperature temperature={current} emphasize=true/>
+                            <Temperature temperature={target} emphasize=false/>
+                        </ybc::Column>
+                        <ybc::Column>
+                            <ybc::Progress classes={classes!("is-primary")} max=100.0 value=50.0/>
+                        </ybc::Column>
+                    </ybc::Columns>
+                </ybc::Container>
+                <Switch<Route> render={Switch::render(switch)} />
+            </BrowserRouter>
         }
+    }
+}
+
+fn switch(routes: &Route) -> Html {
+    match routes {
+        Route::Home => html! { <h1>{ "Home" }</h1> },
+        Route::NotFound => html! { <h1>{ "404" }</h1> },
     }
 }
 
