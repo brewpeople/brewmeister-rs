@@ -2,6 +2,7 @@
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 mod components;
+mod pages;
 
 use anyhow::Result;
 use components::temperature::Temperature;
@@ -100,12 +101,9 @@ impl Component for Model {
                             <Temperature temperature={current} emphasize=true/>
                             <Temperature temperature={target} emphasize=false/>
                         </ybc::Column>
-                        <ybc::Column>
-                            <ybc::Progress classes={classes!("is-primary")} max=100.0 value=50.0/>
-                        </ybc::Column>
                     </ybc::Columns>
+                    <Switch<Route> render={Switch::render(switch)} />
                 </ybc::Container>
-                <Switch<Route> render={Switch::render(switch)} />
             </BrowserRouter>
         }
     }
@@ -113,8 +111,8 @@ impl Component for Model {
 
 fn switch(routes: &Route) -> Html {
     match routes {
-        Route::Home => html! { <h1>{ "Home" }</h1> },
-        Route::NotFound => html! { <h1>{ "404" }</h1> },
+        Route::Home => html! { <pages::home::Home/> },
+        Route::NotFound => html! { <pages::not_found::NotFound/> }
     }
 }
 
