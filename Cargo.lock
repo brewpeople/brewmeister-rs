@@ -1619,7 +1619,7 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 [[package]]
 name = "ybc"
 version = "0.2.1"
-source = "git+https://github.com/brewpeople/ybc?branch=yew-0-19-update#2648b141f1e1c26608f5d7511537e414ce8736b9"
+source = "git+https://github.com/dungeonfog/ybc?branch=yew-0-19-update#1334ce3d630969a6483c36caaf3d826ac75a1cdc"
 dependencies = [
  "derive_more",
  "serde",
