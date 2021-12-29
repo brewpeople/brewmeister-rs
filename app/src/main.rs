@@ -113,9 +113,9 @@ impl Component for Model {
 
 fn switch(routes: &Route) -> Html {
     match routes {
-        Route::Home => html! { <pages::home::Home/> },
-        Route::NewBrew => html! { <pages::new_brew::NewBrew/> },
-        Route::NotFound => html! { <pages::not_found::NotFound/> },
+        Route::Home => html! { <pages::Home/> },
+        Route::NewBrew => html! { <pages::NewBrew/> },
+        Route::NotFound => html! { <pages::NotFound/> },
     }
 }
 
