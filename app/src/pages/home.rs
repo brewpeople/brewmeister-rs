@@ -12,11 +12,7 @@ impl Component for Home {
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
-            <ybc::Columns>
-                <ybc::Column>
-                    <h1>{ "Home" }</h1>
-                </ybc::Column>
-            </ybc::Columns>
+            <h1>{ "Home" }</h1>
         }
     }
 }

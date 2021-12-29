@@ -14,4 +14,3 @@ wasm-bindgen-futures = "0"
 wee_alloc = "0"
 yew = "0.19"
 yew-router = "0.16"
-ybc = { git = "https://github.com/dungeonfog/ybc", branch = "yew-0-19-update" }

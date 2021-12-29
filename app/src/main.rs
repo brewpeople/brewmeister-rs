@@ -94,17 +94,17 @@ impl Component for Model {
         };
 
         html! {
-            <BrowserRouter>
-                <ybc::Container>
-                    <ybc::Columns>
-                        <ybc::Column>
-                            <Temperature temperature={current} emphasize=true/>
-                            <Temperature temperature={target} emphasize=false/>
-                        </ybc::Column>
-                    </ybc::Columns>
-                    <Switch<Route> render={Switch::render(switch)} />
-                </ybc::Container>
-            </BrowserRouter>
+            <div>
+                <header class="header">
+                    <Temperature temperature={current} emphasize=true/>
+                    <Temperature temperature={target} emphasize=false/>
+                </header>
+                <main>
+                    <BrowserRouter>
+                        <Switch<Route> render={Switch::render(switch)} />
+                    </BrowserRouter>
+                </main>
+            </div>
         }
     }
 }

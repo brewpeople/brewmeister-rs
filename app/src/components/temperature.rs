@@ -9,9 +9,9 @@ pub struct TemperatureProps {
 #[function_component(Temperature)]
 pub fn temperature(props: &TemperatureProps) -> Html {
     let class = if props.emphasize {
-        vec!["has-text-weight-bold", "is-size-1"]
+        vec!["header", "emphasize"]
     } else {
-        vec!["is-size-4"]
+        vec![]
     };
 
     html! { <span class={classes!(class)}>{ &props.temperature.round() }{ "°C" }</span> }

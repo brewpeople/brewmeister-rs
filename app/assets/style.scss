@@ -1,0 +1,22 @@
+$font-stack: sans-serif;
+$header-bg-color: #700548;
+$header-fg-color: white;
+
+body {
+    font-family: $font-stack;
+    padding: 0;
+    margin: 0;
+}
+
+.header {
+    position: sticky;
+    top: 0;
+    background-color: $header-bg-color;
+    color: $header-fg-color;
+    padding: 4px;
+
+    &.emphasize {
+        font-weight: bold;
+        font-size: x-large;
+    }
+}
