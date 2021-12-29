@@ -1,5 +1,4 @@
 use crate::devices::Device;
-use models::State;
 use tracing::{debug, instrument};
 
 #[derive(Debug)]
@@ -19,11 +18,11 @@ impl Brewslave {
 impl Device for Brewslave {
     /// Set up the serial connection and poll for new temperature, stirrer and heater values.
     #[instrument]
-    async fn read(&self) -> anyhow::Result<State> {
+    async fn read(&self) -> anyhow::Result<models::Device> {
         let state = self.client.read_state().await?;
         debug!("read {:?}", state);
 
-        Ok(State {
+        Ok(models::Device {
             current_temperature: state.current_temperature,
             target_temperature: state.target_temperature,
             stirrer_on: state.stirrer_on,

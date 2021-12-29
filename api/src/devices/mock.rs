@@ -1,5 +1,4 @@
 use crate::devices::Device;
-use models::State;
 use tracing::instrument;
 
 #[derive(Debug)]
@@ -16,8 +15,8 @@ impl Mock {
 #[async_trait::async_trait]
 impl Device for Mock {
     #[instrument]
-    async fn read(&self) -> anyhow::Result<State> {
-        Ok(State {
+    async fn read(&self) -> anyhow::Result<models::Device> {
+        Ok(models::Device {
             current_temperature: self.temperature,
             target_temperature: self.temperature,
             stirrer_on: false,

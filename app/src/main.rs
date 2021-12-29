@@ -30,11 +30,11 @@ enum Message {
 }
 
 struct Model {
-    state: Arc<RwLock<models::State>>,
+    device: Arc<RwLock<models::Device>>,
     _interval: Interval,
 }
 
-async fn fetch_state() -> Result<models::State> {
+async fn fetch_state() -> Result<models::Device> {
     Ok(http::Request::get("http://0.0.0.0:3000/state")
         .send()
         .await?
@@ -51,7 +51,7 @@ impl Component for Model {
         let interval = Interval::new(1000, move || link.send_message(Message::Tick));
 
         Self {
-            state: Arc::new(RwLock::new(models::State::default())),
+            device: Arc::new(RwLock::new(models::Device::default())),
             _interval: interval,
         }
     }
@@ -59,15 +59,15 @@ impl Component for Model {
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Message::Tick => {
-                let state = self.state.clone();
+                let device = self.device.clone();
 
                 spawn_local(async move {
                     match fetch_state().await {
                         Ok(new_state) => {
                             // TODO: we use std::sync::RwLock here which should lock everything but
                             // it does not ... strange
-                            let mut state = state.write().unwrap();
-                            *state = new_state;
+                            let mut device = device.write().unwrap();
+                            *device = new_state;
                         }
                         Err(err) => {
                             log!("error: ", err.to_string());
@@ -87,7 +87,7 @@ impl Component for Model {
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
-        let state = self.state.clone().read().unwrap().clone();
+        let state = self.device.clone().read().unwrap().clone();
 
         let (current, target) = if !state.serial_problem {
             (state.current_temperature, state.target_temperature)

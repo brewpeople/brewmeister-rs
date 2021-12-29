@@ -31,13 +31,18 @@ enum AppError {
 
 #[derive(Clone, Debug)]
 pub struct State {
-    inner: Arc<RwLock<models::State>>,
+    device: Arc<RwLock<models::Device>>,
+    recipes: Arc<RwLock<models::Recipes>>,
 }
 
 #[instrument]
-async fn get_state(Extension(state): Extension<State>) -> Json<models::State> {
-    let state = state.inner.read().await;
-    Json(state.clone())
+async fn get_state(Extension(state): Extension<State>) -> Json<models::Device> {
+    Json(state.device.read().await.clone())
+}
+
+#[instrument]
+async fn get_recipes(Extension(state): Extension<State>) -> Json<models::Recipes> {
+    Json(state.recipes.read().await.clone())
 }
 
 impl IntoResponse for AppError {
@@ -62,6 +67,7 @@ async fn run_server(state: State) -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/state", get(get_state))
+        .route("/recipes", get(get_recipes))
         .layer(cors)
         .layer(ServiceBuilder::new().layer(AddExtensionLayer::new(state)));
 
@@ -82,7 +88,7 @@ where
     loop {
         interval.tick().await;
 
-        let mut state = state.inner.write().await;
+        let mut state = state.device.write().await;
 
         match device.read().await {
             Ok(new) => {
@@ -106,7 +112,8 @@ async fn main() -> anyhow::Result<()> {
     let opts = Opt::from_args();
 
     let state = State {
-        inner: Arc::new(RwLock::new(models::State::default())),
+        device: Arc::new(RwLock::new(models::Device::default())),
+        recipes: Arc::new(RwLock::new(models::Recipes::default())),
     };
 
     let server_future = run_server(state.clone());

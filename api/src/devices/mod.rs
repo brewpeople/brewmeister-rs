@@ -1,5 +1,3 @@
-use models::State;
-
 pub mod brewslave;
 pub mod mock;
 
@@ -8,7 +6,7 @@ pub mod mock;
 #[async_trait::async_trait]
 pub trait Device {
     /// Read model state from the device.
-    async fn read(&self) -> anyhow::Result<State>;
+    async fn read(&self) -> anyhow::Result<models::Device>;
 
     /// Set target temperature.
     async fn set_temperature(&mut self, temperature: f32) -> anyhow::Result<()>;
