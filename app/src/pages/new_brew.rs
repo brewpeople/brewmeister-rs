@@ -1,10 +1,8 @@
-use crate::Route;
 use yew::prelude::*;
-use yew_router::prelude::*;
 
-pub struct Home;
+pub struct NewBrew;
 
-impl Component for Home {
+impl Component for NewBrew {
     type Message = ();
     type Properties = ();
 
@@ -14,7 +12,7 @@ impl Component for Home {
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
-            <Link<Route> to={Route::NewBrew}>{ "Sud starten" }</Link<Route>>
+            <h1>{ "New Brew" }</h1>
         }
     }
 }

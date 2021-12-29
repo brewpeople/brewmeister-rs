@@ -18,6 +18,8 @@ use yew_router::prelude::*;
 enum Route {
     #[at("/")]
     Home,
+    #[at("/new")]
+    NewBrew,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -112,7 +114,8 @@ impl Component for Model {
 fn switch(routes: &Route) -> Html {
     match routes {
         Route::Home => html! { <pages::home::Home/> },
-        Route::NotFound => html! { <pages::not_found::NotFound/> }
+        Route::NewBrew => html! { <pages::new_brew::NewBrew/> },
+        Route::NotFound => html! { <pages::not_found::NotFound/> },
     }
 }
 
