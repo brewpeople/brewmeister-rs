@@ -98,10 +98,12 @@ impl Component for Model {
         html! {
             <div>
                 <header class="header">
-                    <Temperature temperature={current} emphasize=true/>
-                    <Temperature temperature={target} emphasize=false/>
+                    <div class="center">
+                        <Temperature temperature={current} emphasize=true/>
+                        <Temperature temperature={target} emphasize=false/>
+                    </div>
                 </header>
-                <main>
+                <main class="center">
                     <BrowserRouter>
                         <Switch<Route> render={Switch::render(switch)} />
                     </BrowserRouter>

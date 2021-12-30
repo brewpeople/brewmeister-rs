@@ -9,7 +9,7 @@ pub struct TemperatureProps {
 #[function_component(Temperature)]
 pub fn temperature(props: &TemperatureProps) -> Html {
     let class = if props.emphasize {
-        vec!["header", "emphasize"]
+        vec!["emphasize"]
     } else {
         vec![]
     };
