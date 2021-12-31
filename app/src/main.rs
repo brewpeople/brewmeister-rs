@@ -6,6 +6,7 @@ mod pages;
 
 use anyhow::Result;
 use components::temperature::Temperature;
+use components::theme_switch::ThemeSwitch;
 use gloo::timers::callback::Interval;
 use gloo_console::log;
 use reqwasm::http;
@@ -101,6 +102,7 @@ impl Component for Model {
                     <div class="center">
                         <Temperature temperature={current} emphasize=true/>
                         <Temperature temperature={target} emphasize=false/>
+                        <ThemeSwitch checked=true/>
                     </div>
                 </header>
                 <main class="center">
