@@ -9,11 +9,11 @@ edition = "2018"
 anyhow = "1"
 axum = "0.3"
 async-trait = "*"
+clap = { version = "3", features = ["derive"] }
 comm = { path = "../comm" }
 log = "0"
 env_logger = "0"
 models = { path = "../models" }
-structopt = "*"
 thiserror = "1"
 tokio = { version = "1", features = ["full"] }
 tower = "0"

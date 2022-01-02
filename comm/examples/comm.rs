@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Result};
+use clap::Parser;
 use rand::Rng;
-use structopt::StructOpt;
 
 fn parse_temperature(src: &str) -> Result<f32> {
     let temperature = src.parse::<f32>()?;
@@ -12,7 +12,7 @@ fn parse_temperature(src: &str) -> Result<f32> {
     }
 }
 
-#[derive(StructOpt)]
+#[derive(Parser)]
 enum Opt {
     StressTest {},
     Read {},
@@ -71,7 +71,7 @@ async fn stress_test(client: comm::Comm) -> Result<()> {
 async fn main() -> Result<()> {
     env_logger::init();
 
-    let opts = Opt::from_args();
+    let opts = Opt::parse();
     let client = comm::Comm::new()?;
 
     match opts {

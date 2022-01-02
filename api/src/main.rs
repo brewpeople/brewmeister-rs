@@ -4,22 +4,22 @@ use axum::http::{Method, Response, StatusCode};
 use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::{AddExtensionLayer, Json, Router};
+use clap::Parser;
 use std::convert::Infallible;
 use std::sync::Arc;
-use structopt::StructOpt;
 use thiserror::Error;
 use tokio::sync::RwLock;
 use tokio::try_join;
 use tower::ServiceBuilder;
 use tower_http::cors::{CorsLayer, Origin};
-use tracing::{info, error, instrument};
+use tracing::{error, info, instrument};
 
 mod devices;
 
-#[derive(StructOpt)]
+#[derive(Parser)]
 struct Opt {
     /// Use a mock device instead of the real Arduino Brewslave
-    #[structopt(long)]
+    #[clap(long)]
     use_mock: bool,
 }
 
@@ -115,7 +115,7 @@ where
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     env_logger::init();
-    let opts = Opt::from_args();
+    let opts = Opt::parse();
 
     let state = State {
         device: Arc::new(RwLock::new(models::Device::default())),
