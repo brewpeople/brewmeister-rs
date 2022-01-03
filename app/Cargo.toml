@@ -8,6 +8,7 @@ anyhow = "1"
 futures = "0"
 gloo = "0"
 gloo-console = "0"
+gloo-utils = "0"
 models = { path = "../models" }
 reqwasm = "0"
 wasm-bindgen-futures = "0"

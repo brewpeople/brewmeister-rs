@@ -65,6 +65,7 @@ dependencies = [
  "futures",
  "gloo",
  "gloo-console",
+ "gloo-utils",
  "models",
  "reqwasm",
  "wasm-bindgen-futures",
