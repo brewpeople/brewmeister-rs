@@ -12,8 +12,9 @@ use tokio::sync::RwLock;
 use tokio::try_join;
 use tower::ServiceBuilder;
 use tower_http::cors::{CorsLayer, Origin};
-use tracing::{error, info, instrument};
+use tracing::{error, instrument};
 
+mod db;
 mod devices;
 
 #[derive(Parser)]
@@ -32,7 +33,7 @@ enum AppError {
 #[derive(Clone, Debug)]
 pub struct State {
     device: Arc<RwLock<models::Device>>,
-    recipes: Arc<RwLock<models::Recipes>>,
+    db: db::Database,
 }
 
 #[instrument]
@@ -42,13 +43,12 @@ async fn get_state(Extension(state): Extension<State>) -> Json<models::Device> {
 
 #[instrument]
 async fn get_recipes(Extension(state): Extension<State>) -> Json<models::Recipes> {
-    Json(state.recipes.read().await.clone())
+    Json(state.db.recipes().await)
 }
 
 #[instrument]
 async fn post_recipe(Json(payload): Json<models::Recipe>, Extension(state): Extension<State>) {
-    info!("Add new recipe {}", payload.name);
-    state.recipes.write().await.recipes.push(payload);
+    state.db.add_recipe(payload).await;
 }
 
 impl IntoResponse for AppError {
@@ -119,7 +119,7 @@ async fn main() -> anyhow::Result<()> {
 
     let state = State {
         device: Arc::new(RwLock::new(models::Device::default())),
-        recipes: Arc::new(RwLock::new(models::Recipes::default())),
+        db: db::Database::default(),
     };
 
     let server_future = run_server(state.clone());
