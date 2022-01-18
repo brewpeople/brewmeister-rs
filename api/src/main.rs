@@ -25,9 +25,11 @@ struct Opt {
 }
 
 #[derive(Debug, Error)]
-enum AppError {
+pub enum AppError {
     #[error("IO error")]
     IoError(#[from] std::io::Error),
+    #[error("JSON parse error")]
+    ParseError(#[from] serde_json::Error),
 }
 
 #[derive(Clone, Debug)]
@@ -48,7 +50,11 @@ async fn get_recipes(Extension(state): Extension<State>) -> Json<models::Recipes
 
 #[instrument]
 async fn post_recipe(Json(payload): Json<models::Recipe>, Extension(state): Extension<State>) {
-    state.db.add_recipe(payload).await;
+    state
+        .db
+        .add_recipe(payload)
+        .await
+        .expect("do not fail now, handle me later");
 }
 
 impl IntoResponse for AppError {
@@ -58,6 +64,7 @@ impl IntoResponse for AppError {
     fn into_response(self) -> Response<Self::Body> {
         let tuple = match self {
             Self::IoError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+            Self::ParseError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
         };
 
         tuple.into_response()
@@ -119,7 +126,7 @@ async fn main() -> anyhow::Result<()> {
 
     let state = State {
         device: Arc::new(RwLock::new(models::Device::default())),
-        db: db::Database::default(),
+        db: db::Database::new("db.json")?,
     };
 
     let server_future = run_server(state.clone());

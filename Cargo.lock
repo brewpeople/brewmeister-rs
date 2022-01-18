@@ -56,6 +56,8 @@ dependencies = [
  "env_logger",
  "log",
  "models",
+ "serde",
+ "serde_json",
  "thiserror",
  "tokio",
  "tower",
