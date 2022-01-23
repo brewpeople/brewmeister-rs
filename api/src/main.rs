@@ -1,7 +1,7 @@
 use axum::extract::{Extension, Path};
+use axum::headers::{HeaderMap, HeaderValue};
 use axum::http::header::CONTENT_TYPE;
 use axum::http::{Method, StatusCode};
-use axum::headers::{HeaderMap, HeaderValue};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{AddExtensionLayer, Json, Router};
@@ -13,7 +13,7 @@ use tokio::sync::RwLock;
 use tokio::try_join;
 use tower::ServiceBuilder;
 use tower_http::cors::{CorsLayer, Origin};
-use tracing::{warn, error, instrument};
+use tracing::{error, instrument, warn};
 
 mod db;
 mod devices;
@@ -42,13 +42,9 @@ pub struct State {
 }
 
 fn insert_header_from_extension(map: &mut HeaderMap, ext: &str) {
-
     match ext {
         "css" => {
-            map.insert(
-                CONTENT_TYPE,
-                HeaderValue::from_static("text/css"),
-            );
+            map.insert(CONTENT_TYPE, HeaderValue::from_static("text/css"));
         }
         "html" => {
             map.insert(
