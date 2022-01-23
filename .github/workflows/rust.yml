@@ -1,0 +1,44 @@
+name: Rust
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-ci-${{ hashFiles('**/Cargo.toml') }}
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        components: rustfmt, clippy
+        override: true
+    - name: Add wasm32-unknown-unknown
+      run: rustup target add wasm32-unknown-unknown
+    - name: Install udev
+      run: sudo apt-get update; sudo apt-get install --no-install-recommends libudev-dev
+    - name: Install trunk
+      run: if ! which trunk > /dev/null; then cargo install --locked trunk; fi
+    - name: Format
+      run: cargo fmt --check
+    - name: Build
+      run: pushd .; cd app; trunk build; popd; cargo build
+    - name: Run tests
+      run: cargo test
+    - name: Clippy
+      run: cargo clippy
