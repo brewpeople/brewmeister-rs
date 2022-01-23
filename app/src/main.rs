@@ -37,7 +37,7 @@ struct Model {
 }
 
 async fn fetch_state() -> Result<models::Device> {
-    Ok(http::Request::get("http://0.0.0.0:3000/state")
+    Ok(http::Request::get("http://0.0.0.0:3000/api/state")
         .send()
         .await?
         .json()

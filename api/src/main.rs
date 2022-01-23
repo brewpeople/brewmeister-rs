@@ -1,21 +1,24 @@
-use axum::body::{Bytes, Full};
-use axum::extract::Extension;
-use axum::http::{Method, Response, StatusCode};
-use axum::response::IntoResponse;
+use axum::extract::{Extension, Path};
+use axum::http::header::CONTENT_TYPE;
+use axum::http::{Method, StatusCode};
+use axum::headers::{HeaderMap, HeaderValue};
+use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{AddExtensionLayer, Json, Router};
 use clap::Parser;
-use std::convert::Infallible;
+use include_dir::{include_dir, Dir};
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::RwLock;
 use tokio::try_join;
 use tower::ServiceBuilder;
 use tower_http::cors::{CorsLayer, Origin};
-use tracing::{error, instrument};
+use tracing::{warn, error, instrument};
 
 mod db;
 mod devices;
+
+static DIST_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../app/dist");
 
 #[derive(Parser)]
 struct Opt {
@@ -38,6 +41,34 @@ pub struct State {
     db: db::Database,
 }
 
+fn insert_header_from_extension(map: &mut HeaderMap, ext: &str) {
+
+    match ext {
+        "css" => {
+            map.insert(
+                CONTENT_TYPE,
+                HeaderValue::from_static("text/css"),
+            );
+        }
+        "html" => {
+            map.insert(
+                CONTENT_TYPE,
+                HeaderValue::from_static("text/html; charset=utf-8"),
+            );
+        }
+        "js" => {
+            map.insert(
+                CONTENT_TYPE,
+                HeaderValue::from_static("application/javascript"),
+            );
+        }
+        "wasm" => {
+            map.insert(CONTENT_TYPE, HeaderValue::from_static("application/wasm"));
+        }
+        _ => {}
+    }
+}
+
 #[instrument]
 async fn get_state(Extension(state): Extension<State>) -> Json<models::Device> {
     Json(state.device.read().await.clone())
@@ -57,11 +88,29 @@ async fn post_recipe(Json(payload): Json<models::Recipe>, Extension(state): Exte
         .expect("do not fail now, handle me later");
 }
 
-impl IntoResponse for AppError {
-    type Body = Full<Bytes>;
-    type BodyError = Infallible;
+#[instrument]
+async fn get_static(Path(path): Path<String>) -> (StatusCode, HeaderMap, Vec<u8>) {
+    let mut headers = HeaderMap::new();
 
-    fn into_response(self) -> Response<Self::Body> {
+    match DIST_DIR.get_file(&path) {
+        Some(file) => {
+            file.path()
+                .extension()
+                .map(|e| e.to_str())
+                .flatten()
+                .map(|e| insert_header_from_extension(&mut headers, e));
+
+            (StatusCode::OK, headers, file.contents().to_vec())
+        }
+        None => {
+            warn!("file not found");
+            (StatusCode::NOT_FOUND, headers, vec![])
+        }
+    }
+}
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> Response {
         let tuple = match self {
             Self::IoError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
             Self::ParseError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
@@ -74,13 +123,19 @@ impl IntoResponse for AppError {
 /// Start the web server.
 #[instrument]
 async fn run_server(state: State) -> anyhow::Result<()> {
+    // Only useful if we run the app via `trunk serve`, if not we serve the static files directly.
     let cors = CorsLayer::new()
         .allow_origin(Origin::exact("http://0.0.0.0:8080".parse()?))
         .allow_methods(vec![Method::GET, Method::POST]);
 
     let app = Router::new()
-        .route("/state", get(get_state))
-        .route("/recipes", get(get_recipes).post(post_recipe))
+        .route(
+            "/",
+            get(|| async { get_static(Path("index.html".into())).await }),
+        )
+        .route("/:key", get(get_static))
+        .route("/api/state", get(get_state))
+        .route("/api/recipes", get(get_recipes).post(post_recipe))
         .layer(cors)
         .layer(ServiceBuilder::new().layer(AddExtensionLayer::new(state)));
 
