@@ -1,3 +1,4 @@
+use axum::body;
 use axum::extract::{Extension, Path};
 use axum::headers::{HeaderMap, HeaderValue};
 use axum::http::header::CONTENT_TYPE;
@@ -33,6 +34,8 @@ pub enum AppError {
     IoError(#[from] std::io::Error),
     #[error("JSON parse error")]
     ParseError(#[from] serde_json::Error),
+    #[error("Database problem: {0}")]
+    SqlError(#[from] sqlx::Error),
 }
 
 #[derive(Clone, Debug)]
@@ -71,8 +74,10 @@ async fn get_state(Extension(state): Extension<State>) -> Json<models::Device> {
 }
 
 #[instrument]
-async fn get_recipes(Extension(state): Extension<State>) -> Json<models::Recipes> {
-    Json(state.db.recipes().await)
+async fn get_recipes(
+    Extension(state): Extension<State>,
+) -> Result<Json<models::Recipes>, AppError> {
+    Ok(Json(state.db.recipes().await?))
 }
 
 #[instrument]
@@ -107,12 +112,10 @@ async fn get_static(Path(path): Path<String>) -> (StatusCode, HeaderMap, Vec<u8>
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        let tuple = match self {
-            Self::IoError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
-            Self::ParseError(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
-        };
-
-        tuple.into_response()
+        Response::builder()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .body(body::boxed(body::Full::from(format!("Error: {}", self))))
+            .unwrap()
     }
 }
 
@@ -177,7 +180,7 @@ async fn main() -> anyhow::Result<()> {
 
     let state = State {
         device: Arc::new(RwLock::new(models::Device::default())),
-        db: db::Database::new("db.json")?,
+        db: db::Database::new().await?,
     };
 
     let server_future = run_server(state.clone());
