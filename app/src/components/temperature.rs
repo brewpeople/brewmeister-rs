@@ -20,6 +20,6 @@ pub fn temperature(props: &TemperatureProps) -> Html {
         },
         None => html! {
             <span class={classes!(class)}>{ "ERR" }</span>
-        }
+        },
     }
 }
