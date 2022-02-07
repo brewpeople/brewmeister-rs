@@ -13,7 +13,7 @@ pub struct Device {
 }
 
 /// Recipe step.
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Step {
     pub description: String,
     pub target_temperature: f32,
@@ -22,7 +22,7 @@ pub struct Step {
 
 /// Single recipe consisting of name and steps.
 /// TODO: add additional metadata not related to the brewing itself.
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Recipe {
     pub id: i64,
     pub name: String,
@@ -31,7 +31,7 @@ pub struct Recipe {
 }
 
 /// Multiple recipes.
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Recipes {
     pub recipes: Vec<Recipe>,
 }
