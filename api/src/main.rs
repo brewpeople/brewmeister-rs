@@ -95,11 +95,9 @@ async fn get_static(Path(path): Path<String>) -> (StatusCode, HeaderMap, Vec<u8>
 
     match DIST_DIR.get_file(&path) {
         Some(file) => {
-            file.path()
-                .extension()
-                .map(|e| e.to_str())
-                .flatten()
-                .map(|e| insert_header_from_extension(&mut headers, e));
+            if let Some(e) = file.path().extension().map(|e| e.to_str()).flatten() {
+                insert_header_from_extension(&mut headers, e);
+            }
 
             (StatusCode::OK, headers, file.contents().to_vec())
         }
