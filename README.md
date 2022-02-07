@@ -1,5 +1,7 @@
 # Brewmeister
 
+[![Rust](https://github.com/brewpeople/brewmeister-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/brewpeople/brewmeister-rs/actions/workflows/rust.yml)
+
 Brewmeister is the controller part of the Brewslave to execute a beer brewing
 recipe. Besides setting target temperatures and holding them for a given amount
 of time, it will also record temperatures and states for archival reasons.

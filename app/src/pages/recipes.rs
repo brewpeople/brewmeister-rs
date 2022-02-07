@@ -1,5 +1,5 @@
-use crate::Route;
 use crate::components::recipes_list::RecipesList;
+use crate::Route;
 use reqwasm::http::Request;
 use yew::prelude::*;
 use yew_router::prelude::*;
