@@ -17,8 +17,8 @@ impl Device for Mock {
     #[instrument]
     async fn read(&self) -> anyhow::Result<models::Device> {
         Ok(models::Device {
-            current_temperature: self.temperature,
-            target_temperature: self.temperature,
+            current_temperature: Some(self.temperature),
+            target_temperature: Some(self.temperature),
             stirrer_on: false,
             heater_on: false,
             serial_problem: false,

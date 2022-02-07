@@ -95,7 +95,7 @@ impl Component for Model {
         let (current, target) = if !state.serial_problem {
             (state.current_temperature, state.target_temperature)
         } else {
-            (0.0, 0.0)
+            (None, None)
         };
 
         let on_theme_switch = {

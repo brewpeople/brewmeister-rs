@@ -30,8 +30,8 @@ pub struct Comm {
 /// Current state of the Brewslave.
 #[derive(Clone, Debug)]
 pub struct State {
-    pub current_temperature: f32,
-    pub target_temperature: f32,
+    pub current_temperature: Option<f32>,
+    pub target_temperature: Option<f32>,
     pub stirrer_on: bool,
     pub heater_on: bool,
 }
@@ -88,9 +88,24 @@ impl Comm {
         timeout(Duration::from_secs(1), stream.read_exact(&mut target)).await??;
         timeout(Duration::from_secs(1), stream.read_exact(&mut state)).await??;
 
+        let current_temperature = LittleEndian::read_f32(&current);
+        let target_temperature = LittleEndian::read_f32(&target);
+
+        let current_temperature = if current_temperature.is_nan() {
+            None
+        } else {
+            Some(current_temperature)
+        };
+
+        let target_temperature = if target_temperature.is_nan() {
+            None
+        } else {
+            Some(target_temperature)
+        };
+
         Ok(State {
-            current_temperature: LittleEndian::read_f32(&current),
-            target_temperature: LittleEndian::read_f32(&target),
+            current_temperature,
+            target_temperature,
             stirrer_on: (state[0] & RESPONSE_STIRRER_BIT) != 0,
             heater_on: (state[0] & RESPONSE_HEATER_BIT) != 0,
         })

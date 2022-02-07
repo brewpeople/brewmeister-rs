@@ -3,7 +3,7 @@ use yew::{classes, function_component, html, Properties};
 #[derive(Properties, PartialEq)]
 pub struct TemperatureProps {
     pub emphasize: bool,
-    pub temperature: f32,
+    pub temperature: Option<f32>,
 }
 
 #[function_component(Temperature)]
@@ -14,5 +14,12 @@ pub fn temperature(props: &TemperatureProps) -> Html {
         vec![]
     };
 
-    html! { <span class={classes!(class)}>{ &props.temperature.round() }{ "°C" }</span> }
+    match props.temperature {
+        Some(temperature) => html! {
+            <span class={classes!(class)}>{ &temperature.round() }{ "°C" }</span>
+        },
+        None => html! {
+            <span class={classes!(class)}>{ "ERR" }</span>
+        }
+    }
 }

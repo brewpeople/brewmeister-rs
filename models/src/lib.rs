@@ -3,8 +3,10 @@ use serde::{Deserialize, Serialize};
 /// Device state.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Device {
-    pub current_temperature: f32,
-    pub target_temperature: f32,
+    /// Current temperature or `None` if sensor reading failed.
+    pub current_temperature: Option<f32>,
+    /// Target temperature or `None` if sensor reading failed.
+    pub target_temperature: Option<f32>,
     pub stirrer_on: bool,
     pub heater_on: bool,
     pub serial_problem: bool,
