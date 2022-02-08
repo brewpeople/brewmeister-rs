@@ -14,7 +14,7 @@ use tokio::sync::RwLock;
 use tokio::try_join;
 use tower::ServiceBuilder;
 use tower_http::cors::{CorsLayer, Origin};
-use tracing::{info, error, instrument, warn};
+use tracing::{error, info, instrument, warn};
 
 mod db;
 mod devices;
@@ -84,6 +84,18 @@ async fn get_recipes(
     Ok(Json(recipes))
 }
 
+#[instrument(skip_all)]
+async fn get_recipe(
+    Path(id): Path<i64>,
+    Extension(state): Extension<State>,
+) -> Result<Json<models::Recipe>, AppError> {
+    let recipe = state.db.recipe(id).await?;
+
+    info!("Read recipe {}", recipe.id);
+
+    Ok(Json(recipe))
+}
+
 #[instrument]
 async fn post_recipe(Json(payload): Json<models::Recipe>, Extension(state): Extension<State>) {
     info!("Storing recipe");
@@ -139,6 +151,7 @@ async fn run_server(state: State) -> anyhow::Result<()> {
         .route("/:key", get(get_static))
         .route("/api/state", get(get_state))
         .route("/api/recipes", get(get_recipes).post(post_recipe))
+        .route("/api/recipe/:id", get(get_recipe))
         .layer(cors)
         .layer(ServiceBuilder::new().layer(AddExtensionLayer::new(state)));
 

@@ -63,6 +63,17 @@ impl Database {
         Ok(models::Recipes { recipes })
     }
 
+    /// Get recipe by id.
+    #[instrument]
+    pub async fn recipe(&self, id: i64) -> Result<models::Recipe, AppError> {
+        let recipe = sqlx::query_as::<_, Recipe>("SELECT * FROM recipes WHERE id = ?")
+            .bind(id)
+            .fetch_one(&self.pool)
+            .await?;
+
+        Ok(recipe.into())
+    }
+
     /// Add a recipe.
     #[instrument]
     pub async fn add_recipe(&self, recipe: models::Recipe) -> Result<(), AppError> {
