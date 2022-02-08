@@ -11,7 +11,6 @@ clap = { version = "3", features = ["derive"] }
 comm = { path = "../comm" }
 dotenv = "0"
 log = "0"
-env_logger = "0"
 futures = "0"
 include_dir = "0"
 models = { path = "../models" }
@@ -23,3 +22,4 @@ tokio = { version = "1", features = ["full"] }
 tower = "0"
 tower-http = { version = "0.1.1", features = ["cors"] }
 tracing = "0"
+tracing-subscriber = "0"

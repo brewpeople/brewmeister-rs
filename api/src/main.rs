@@ -14,7 +14,7 @@ use tokio::sync::RwLock;
 use tokio::try_join;
 use tower::ServiceBuilder;
 use tower_http::cors::{CorsLayer, Origin};
-use tracing::{error, instrument, warn};
+use tracing::{info, error, instrument, warn};
 
 mod db;
 mod devices;
@@ -73,15 +73,21 @@ async fn get_state(Extension(state): Extension<State>) -> Json<models::Device> {
     Json(state.device.read().await.clone())
 }
 
-#[instrument]
+#[instrument(skip_all)]
 async fn get_recipes(
     Extension(state): Extension<State>,
 ) -> Result<Json<models::Recipes>, AppError> {
-    Ok(Json(state.db.recipes().await?))
+    let recipes = state.db.recipes().await?;
+
+    info!("Read {} recipes", recipes.recipes.len());
+
+    Ok(Json(recipes))
 }
 
 #[instrument]
 async fn post_recipe(Json(payload): Json<models::Recipe>, Extension(state): Extension<State>) {
+    info!("Storing recipe");
+
     state
         .db
         .add_recipe(payload)
@@ -173,7 +179,8 @@ where
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    env_logger::init();
+    tracing_subscriber::fmt::init();
+
     let opts = Opt::parse();
 
     let state = State {
