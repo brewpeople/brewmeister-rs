@@ -179,6 +179,7 @@ where
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    dotenv::dotenv()?;
     tracing_subscriber::fmt::init();
 
     let opts = Opt::parse();
