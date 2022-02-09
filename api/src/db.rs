@@ -76,7 +76,7 @@ impl Database {
 
     /// Add a recipe.
     #[instrument]
-    pub async fn add_recipe(&self, recipe: models::Recipe) -> Result<(), AppError> {
+    pub async fn add_recipe(&self, recipe: models::NewRecipe) -> Result<(), AppError> {
         sqlx::query("INSERT INTO recipes (title, description) VALUES (?, ?)")
             .bind(recipe.name)
             .bind(recipe.description)

@@ -91,8 +91,8 @@ async fn get_recipe(
     Ok(Json(recipe))
 }
 
-#[instrument]
-async fn post_recipe(Json(payload): Json<models::Recipe>, Extension(state): Extension<State>) {
+#[instrument(skip_all)]
+async fn post_recipe(Json(payload): Json<models::NewRecipe>, Extension(state): Extension<State>) {
     debug!("Storing {:?}", payload);
 
     state

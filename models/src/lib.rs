@@ -30,6 +30,14 @@ pub struct Recipe {
     pub steps: Vec<Step>,
 }
 
+/// A new recipe going to be stored in the database.
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct NewRecipe {
+    pub name: String,
+    pub description: String,
+    pub steps: Vec<Step>,
+}
+
 /// Multiple recipes.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Recipes {
