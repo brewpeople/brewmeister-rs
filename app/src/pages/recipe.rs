@@ -13,7 +13,7 @@ pub fn recipe(Props { id }: &Props) -> Html {
 
     {
         let recipe = recipe.clone();
-        let route = format!("/api/recipe/{id}");
+        let route = format!("/api/recipes/{id}");
 
         use_effect_with_deps(
             move |_| {

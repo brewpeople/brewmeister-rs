@@ -151,7 +151,7 @@ async fn run_server(state: State) -> anyhow::Result<()> {
         .route("/:key", get(get_static))
         .route("/api/state", get(get_state))
         .route("/api/recipes", get(get_recipes).post(post_recipe))
-        .route("/api/recipe/:id", get(get_recipe))
+        .route("/api/recipes/:id", get(get_recipe))
         .layer(cors)
         .layer(ServiceBuilder::new().layer(AddExtensionLayer::new(state)));
 

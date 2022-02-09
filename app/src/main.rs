@@ -19,7 +19,7 @@ use yew_router::prelude::*;
 enum Route {
     #[at("/")]
     Home,
-    #[at("/recipe/:id")]
+    #[at("/recipes/:id")]
     Recipe { id: i64 },
     #[at("/recipes")]
     Recipes,
