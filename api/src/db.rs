@@ -35,7 +35,7 @@ impl Database {
     pub async fn new() -> Result<Self, AppError> {
         let url = env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite::memory:".to_string());
 
-        info!("Connecting to {}", url);
+        info!("Connecting to {url}");
 
         let options = SqliteConnectOptions::from_str(&url)?
             .disable_statement_logging()

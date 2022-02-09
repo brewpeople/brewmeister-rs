@@ -77,7 +77,7 @@ impl Component for Model {
                             *device = new_state;
                         }
                         Err(err) => {
-                            error!("error: {}", err.to_string());
+                            error!("error: {err}");
                         }
                     }
                 });

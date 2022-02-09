@@ -183,7 +183,7 @@ where
                 state.serial_problem = false;
             }
             Err(err) => {
-                error!("Error reading from device: {}", err);
+                error!("Error reading from device: {err}");
                 state.serial_problem = true;
             }
         }
