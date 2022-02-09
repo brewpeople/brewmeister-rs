@@ -8,7 +8,7 @@ use anyhow::Result;
 use components::temperature::Temperature;
 use components::theme_switch::ThemeSwitch;
 use gloo::timers::callback::Interval;
-use gloo_console::log;
+use log::error;
 use reqwasm::http;
 use std::sync::{Arc, RwLock};
 use wasm_bindgen_futures::spawn_local;
@@ -77,7 +77,7 @@ impl Component for Model {
                             *device = new_state;
                         }
                         Err(err) => {
-                            log!("error: ", err.to_string());
+                            error!("error: {}", err.to_string());
                         }
                     }
                 });
@@ -150,5 +150,6 @@ fn switch(routes: &Route) -> Html {
 }
 
 fn main() {
+    wasm_logger::init(wasm_logger::Config::default());
     yew::start_app::<Model>();
 }
