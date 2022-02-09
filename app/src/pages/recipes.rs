@@ -1,4 +1,4 @@
-use crate::components::recipes_list::RecipesList;
+use crate::components::RecipesList;
 use reqwasm::http::Request;
 use yew::prelude::*;
 

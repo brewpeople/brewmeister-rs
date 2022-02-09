@@ -5,8 +5,8 @@ mod components;
 mod pages;
 
 use anyhow::Result;
-use components::temperature::Temperature;
-use components::theme_switch::ThemeSwitch;
+use components::Temperature;
+use components::ThemeSwitch;
 use gloo::timers::callback::Interval;
 use log::error;
 use reqwasm::http;

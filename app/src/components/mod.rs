@@ -1,6 +1,9 @@
 mod recipe;
-pub mod recipes_list;
-pub mod temperature;
-pub mod theme_switch;
+mod recipes_list;
+mod temperature;
+mod theme_switch;
 
 pub use recipe::Recipe;
+pub use recipes_list::RecipesList;
+pub use temperature::Temperature;
+pub use theme_switch::ThemeSwitch;
