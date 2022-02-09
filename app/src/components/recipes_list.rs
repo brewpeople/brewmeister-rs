@@ -1,4 +1,6 @@
+use crate::Route;
 use yew::prelude::*;
+use yew_router::prelude::*;
 
 #[derive(Clone, Properties, PartialEq)]
 pub struct Props {
@@ -13,8 +15,7 @@ pub fn recipes_list(Props { recipes }: &Props) -> Html {
         .map(|recipe| {
             html! {
                 <>
-                <h2>{ recipe.name.clone() }</h2>
-                <p>{ recipe.description.clone() }</p>
+                <Link<Route> to={Route::Recipe { id: recipe.id }}>{recipe.name.clone()}</Link<Route>>
                 </>
             }
         })

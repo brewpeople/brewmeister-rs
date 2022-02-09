@@ -1,19 +1,25 @@
-use crate::components::recipes_list::RecipesList;
+use crate::components;
 use reqwasm::http::Request;
 use yew::prelude::*;
 
-#[function_component(Recipes)]
-pub fn recipes() -> Html {
-    let recipes = use_state(models::Recipes::default);
+#[derive(Properties, PartialEq)]
+pub struct Props {
+    pub id: i64,
+}
+
+#[function_component(Recipe)]
+pub fn recipe(Props { id }: &Props) -> Html {
+    let recipe = use_state(models::Recipe::default);
 
     {
-        let recipes = recipes.clone();
+        let recipe = recipe.clone();
+        let route = format!("/api/recipe/{}", id);
 
         use_effect_with_deps(
             move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
                     // TODO: proper error handling
-                    let fetched: models::Recipes = Request::get("/api/recipes")
+                    let fetched: models::Recipe = Request::get(&route)
                         .send()
                         .await
                         .unwrap()
@@ -21,7 +27,7 @@ pub fn recipes() -> Html {
                         .await
                         .unwrap();
 
-                    recipes.set(fetched);
+                    recipe.set(fetched);
                 });
                 || ()
             },
@@ -30,8 +36,6 @@ pub fn recipes() -> Html {
     }
 
     html! {
-        <>
-        <RecipesList recipes={(*recipes).clone()} />
-        </>
+        <components::Recipe recipe={(*recipe).clone()} />
     }
 }

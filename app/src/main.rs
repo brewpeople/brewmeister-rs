@@ -19,6 +19,8 @@ use yew_router::prelude::*;
 enum Route {
     #[at("/")]
     Home,
+    #[at("/recipe/:id")]
+    Recipe { id: i64 },
     #[at("/recipes")]
     Recipes,
     #[at("/new")]
@@ -143,6 +145,7 @@ fn switch(routes: &Route) -> Html {
         Route::NewBrew => html! { <pages::NewBrew/> },
         Route::NotFound => html! { <pages::NotFound/> },
         Route::Recipes => html! { <pages::Recipes/> },
+        Route::Recipe { id } => html! { <pages::Recipe id={id.clone()} /> },
     }
 }
 

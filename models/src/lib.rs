@@ -22,7 +22,7 @@ pub struct Step {
 
 /// Single recipe consisting of name and steps.
 /// TODO: add additional metadata not related to the brewing itself.
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Recipe {
     pub id: i64,
     pub name: String,
