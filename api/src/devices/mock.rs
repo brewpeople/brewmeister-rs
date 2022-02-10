@@ -1,4 +1,5 @@
 use crate::devices::Device;
+use crate::AppError;
 use tracing::instrument;
 
 #[derive(Debug)]
@@ -15,7 +16,7 @@ impl Mock {
 #[async_trait::async_trait]
 impl Device for Mock {
     #[instrument]
-    async fn read(&self) -> anyhow::Result<models::Device> {
+    async fn read(&self) -> Result<models::Device, AppError> {
         Ok(models::Device {
             current_temperature: Some(self.temperature),
             target_temperature: Some(self.temperature),
@@ -26,7 +27,7 @@ impl Device for Mock {
     }
 
     #[instrument]
-    async fn set_temperature(&mut self, temperature: f32) -> anyhow::Result<()> {
+    async fn set_temperature(&mut self, temperature: f32) -> Result<(), AppError> {
         self.temperature = temperature;
         Ok(())
     }

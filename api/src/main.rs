@@ -1,7 +1,7 @@
 use axum::body;
 use axum::extract::{Extension, Path};
 use axum::headers::{HeaderMap, HeaderValue};
-use axum::http::header::CONTENT_TYPE;
+use axum::http::header::{InvalidHeaderValue, CONTENT_TYPE};
 use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
@@ -30,6 +30,16 @@ struct Opt {
 
 #[derive(Debug, Error)]
 pub enum AppError {
+    #[error("Address parse failed: {0}")]
+    AddrParseError(#[from] std::net::AddrParseError),
+    #[error("Serial communication error: {0}")]
+    CommError(#[from] comm::Error),
+    #[error("Reading .env failed: {0}")]
+    DotenvError(#[from] dotenv::Error),
+    #[error("Hyper error: {0}")]
+    HyperError(#[from] hyper::Error),
+    #[error("Invalid header: {0}")]
+    InvalidHeader(#[from] InvalidHeaderValue),
     #[error("IO error")]
     IoError(#[from] std::io::Error),
     #[error("JSON parse error")]
@@ -132,7 +142,7 @@ impl IntoResponse for AppError {
 
 /// Start the web server.
 #[instrument]
-async fn run_server(state: State) -> anyhow::Result<()> {
+async fn run_server(state: State) -> Result<(), AppError> {
     // Only useful if we run the app via `trunk serve`, if not we serve the static files directly.
     let cors = CorsLayer::new()
         .allow_origin(Origin::exact("http://0.0.0.0:8080".parse()?))
@@ -158,7 +168,7 @@ async fn run_server(state: State) -> anyhow::Result<()> {
 }
 
 #[instrument]
-async fn communicate<D>(device: D, state: State) -> anyhow::Result<()>
+async fn communicate<D>(device: D, state: State) -> Result<(), AppError>
 where
     D: crate::devices::Device + std::fmt::Debug,
 {
@@ -186,10 +196,8 @@ where
     }
 }
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn try_main() -> Result<(), AppError> {
     dotenv::dotenv()?;
-    tracing_subscriber::fmt::init();
 
     let opts = Opt::parse();
 
@@ -211,4 +219,14 @@ async fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+#[tokio::main]
+async fn main() {
+    tracing_subscriber::fmt::init();
+
+    if let Err(err) = try_main().await {
+        error!("{}", err);
+        std::process::exit(1);
+    }
 }

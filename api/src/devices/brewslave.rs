@@ -1,4 +1,5 @@
 use crate::devices::Device;
+use crate::AppError;
 use tracing::{debug, instrument};
 
 #[derive(Debug)]
@@ -7,7 +8,7 @@ pub struct Brewslave {
 }
 
 impl Brewslave {
-    pub fn new() -> anyhow::Result<Self> {
+    pub fn new() -> Result<Self, AppError> {
         Ok(Self {
             client: comm::Comm::new()?,
         })
@@ -18,7 +19,7 @@ impl Brewslave {
 impl Device for Brewslave {
     /// Set up the serial connection and poll for new temperature, stirrer and heater values.
     #[instrument]
-    async fn read(&self) -> anyhow::Result<models::Device> {
+    async fn read(&self) -> Result<models::Device, AppError> {
         let state = self.client.read_state().await?;
         debug!("read {:?}", state);
 
@@ -32,7 +33,7 @@ impl Device for Brewslave {
     }
 
     #[instrument]
-    async fn set_temperature(&mut self, temperature: f32) -> anyhow::Result<()> {
+    async fn set_temperature(&mut self, temperature: f32) -> Result<(), AppError> {
         Ok(self.client.set_temperature(temperature).await?)
     }
 }
