@@ -145,7 +145,7 @@ fn switch(routes: &Route) -> Html {
         Route::NewBrew => html! { <pages::NewBrew/> },
         Route::NotFound => html! { <pages::NotFound/> },
         Route::Recipes => html! { <pages::Recipes/> },
-        Route::Recipe { id } => html! { <pages::Recipe id={id.clone()} /> },
+        Route::Recipe { id } => html! { <pages::Recipe id={*id} /> },
     }
 }
 
