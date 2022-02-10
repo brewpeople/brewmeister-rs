@@ -14,7 +14,7 @@ use tokio::sync::RwLock;
 use tokio::try_join;
 use tower::ServiceBuilder;
 use tower_http::cors::{CorsLayer, Origin};
-use tracing::{error, debug, instrument, warn};
+use tracing::{debug, error, instrument, warn};
 
 mod db;
 mod devices;
@@ -167,10 +167,9 @@ where
     loop {
         interval.tick().await;
 
-        let mut state = state.device.write().await;
-
         match device.read().await {
             Ok(new) => {
+                let mut state = state.device.write().await;
                 state.current_temperature = new.current_temperature;
                 state.target_temperature = new.current_temperature;
                 state.stirrer_on = new.stirrer_on;
@@ -179,6 +178,8 @@ where
             }
             Err(err) => {
                 error!("Error reading from device: {err}");
+
+                let mut state = state.device.write().await;
                 state.serial_problem = true;
             }
         }
