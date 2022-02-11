@@ -1,9 +1,7 @@
-use crate::devices::Device;
 use axum::http::header::InvalidHeaderValue;
 use clap::Parser;
-use std::sync::Arc;
 use thiserror::Error;
-use tokio::sync::RwLock;
+use tokio::sync::{mpsc, oneshot};
 use tokio::try_join;
 use tracing::error;
 
@@ -28,6 +26,8 @@ pub enum AppError {
     DotenvError(#[from] dotenv::Error),
     #[error("Hyper error: {0}")]
     HyperError(#[from] hyper::Error),
+    #[error("Internal error: {0}")]
+    RecvError(#[from] oneshot::error::RecvError),
     #[error("Invalid header: {0}")]
     InvalidHeader(#[from] InvalidHeaderValue),
     #[error("IO error")]
@@ -38,31 +38,23 @@ pub enum AppError {
     SqlError(#[from] sqlx::Error),
 }
 
-#[derive(Clone, Debug)]
-pub struct State {
-    device: Arc<RwLock<models::Device>>,
-    db: db::Database,
-}
-
 async fn try_main() -> Result<(), AppError> {
     dotenv::dotenv()?;
 
     let opts = Opt::parse();
 
-    let state = State {
-        device: Arc::new(RwLock::new(models::Device::default())),
-        db: db::Database::new().await?,
-    };
+    let (tx, rx) = mpsc::channel(32);
 
-    let server_future = api::run(state.clone());
+    let state = api::State::new(tx).await?;
+    let server_future = api::run(state);
 
     if opts.use_mock {
-        let device = crate::devices::mock::Mock::new();
-        let comm_future = device.run(state);
+        let device = devices::mock::Mock::new();
+        let comm_future = devices::run(device, rx);
         try_join!(server_future, comm_future)?;
     } else {
-        let device = crate::devices::brewslave::Brewslave::new()?;
-        let comm_future = device.run(state);
+        let device = devices::brewslave::Brewslave::new()?;
+        let comm_future = devices::run(device, rx);
         try_join!(server_future, comm_future)?;
     }
 

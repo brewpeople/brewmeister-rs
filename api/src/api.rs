@@ -1,4 +1,4 @@
-use crate::{AppError, State};
+use crate::{db, devices, AppError};
 use axum::body;
 use axum::extract::{Extension, Path};
 use axum::headers::{HeaderMap, HeaderValue};
@@ -8,11 +8,31 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{AddExtensionLayer, Json, Router};
 use include_dir::{include_dir, Dir};
+use tokio::sync::{mpsc, oneshot};
 use tower::ServiceBuilder;
 use tower_http::cors::{CorsLayer, Origin};
 use tracing::{debug, instrument, warn};
 
 static DIST_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../app/dist");
+
+/// Internal server state.
+#[derive(Clone, Debug)]
+pub struct State {
+    db: db::Database,
+    tx: mpsc::Sender<devices::Command>,
+}
+
+impl State {
+    /// Create a new `State` obhject.
+    ///
+    /// Pass sender `tx` used to map API calls to device requests.
+    pub async fn new(tx: mpsc::Sender<devices::Command>) -> Result<Self, AppError> {
+        Ok(Self {
+            db: db::Database::new().await?,
+            tx,
+        })
+    }
+}
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
@@ -48,8 +68,11 @@ fn insert_header_from_extension(map: &mut HeaderMap, ext: &str) {
 }
 
 #[instrument]
-async fn get_state(Extension(state): Extension<State>) -> Json<models::Device> {
-    Json(state.device.read().await.clone())
+async fn get_state(Extension(state): Extension<State>) -> Result<Json<models::Device>, AppError> {
+    let (tx, rx) = oneshot::channel();
+    let command = devices::Command::Read { resp: tx };
+    let _ = state.tx.send(command).await;
+    Ok(Json(rx.await??))
 }
 
 #[instrument(skip_all)]

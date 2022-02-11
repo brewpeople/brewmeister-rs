@@ -1,8 +1,9 @@
+use crate::AppError;
+use tokio::sync::{mpsc, oneshot};
+use tracing::instrument;
+
 pub mod brewslave;
 pub mod mock;
-
-use crate::{AppError, State};
-use tracing::{error, instrument};
 
 /// An external device capable of reading current real and set temperature as well as allowing
 /// setting a target temperature.
@@ -13,34 +14,29 @@ pub trait Device {
 
     /// Set target temperature.
     async fn set_temperature(&mut self, temperature: f32) -> Result<(), AppError>;
+}
 
-    /// Start polling `device` and updating `state`.
-    #[instrument]
-    async fn run(&self, state: State) -> Result<(), AppError>
-    where
-        Self: std::fmt::Debug,
-    {
-        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
+/// Used by the caller to get a result back from a command.
+type Responder<T> = oneshot::Sender<Result<T, AppError>>;
 
-        loop {
-            interval.tick().await;
+/// Commands to send to the device channel.
+pub enum Command {
+    Read { resp: Responder<models::Device> },
+}
 
-            match self.read().await {
-                Ok(new) => {
-                    let mut state = state.device.write().await;
-                    state.current_temperature = new.current_temperature;
-                    state.target_temperature = new.current_temperature;
-                    state.stirrer_on = new.stirrer_on;
-                    state.heater_on = new.heater_on;
-                    state.serial_problem = false;
-                }
-                Err(err) => {
-                    error!("Error reading from device: {err}");
-
-                    let mut state = state.device.write().await;
-                    state.serial_problem = true;
-                }
+/// Run handler task receiving commands via `rx` and forwards them to the `device`.
+#[instrument]
+pub async fn run<D>(device: D, mut rx: mpsc::Receiver<Command>) -> Result<(), AppError>
+where
+    D: Device + std::fmt::Debug,
+{
+    while let Some(command) = rx.recv().await {
+        match command {
+            Command::Read { resp } => {
+                let _ = resp.send(device.read().await);
             }
         }
     }
+
+    Ok(())
 }
