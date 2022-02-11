@@ -1,4 +1,4 @@
-use crate::AppError;
+use crate::Result;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
 use sqlx::{ConnectOptions, FromRow};
 use std::convert::From;
@@ -32,7 +32,7 @@ impl From<Recipe> for models::Recipe {
 impl Database {
     /// Create new database. Use the environment variable `DATABASE_URL` to point to a valid sqlite
     /// database file.
-    pub async fn new() -> Result<Self, AppError> {
+    pub async fn new() -> Result<Self> {
         let url = env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite::memory:".to_string());
 
         info!("Connecting to {url}");
@@ -52,7 +52,7 @@ impl Database {
 
     /// Get all known recipes.
     #[instrument]
-    pub async fn recipes(&self) -> Result<models::Recipes, AppError> {
+    pub async fn recipes(&self) -> Result<models::Recipes> {
         let recipes = sqlx::query_as::<_, Recipe>("SELECT * FROM recipes")
             .fetch_all(&self.pool)
             .await?
@@ -65,7 +65,7 @@ impl Database {
 
     /// Get recipe by id.
     #[instrument]
-    pub async fn recipe(&self, id: i64) -> Result<models::Recipe, AppError> {
+    pub async fn recipe(&self, id: i64) -> Result<models::Recipe> {
         let recipe = sqlx::query_as::<_, Recipe>("SELECT * FROM recipes WHERE id = ?")
             .bind(id)
             .fetch_one(&self.pool)
@@ -76,7 +76,7 @@ impl Database {
 
     /// Add a recipe.
     #[instrument]
-    pub async fn add_recipe(&self, recipe: models::NewRecipe) -> Result<(), AppError> {
+    pub async fn add_recipe(&self, recipe: models::NewRecipe) -> Result<()> {
         sqlx::query("INSERT INTO recipes (title, description) VALUES (?, ?)")
             .bind(recipe.name)
             .bind(recipe.description)

@@ -1,4 +1,4 @@
-use crate::AppError;
+use crate::Result;
 use tokio::sync::{mpsc, oneshot};
 use tracing::instrument;
 
@@ -10,14 +10,14 @@ pub mod mock;
 #[async_trait::async_trait]
 pub trait Device {
     /// Read model state from the device.
-    async fn read(&self) -> Result<models::Device, AppError>;
+    async fn read(&self) -> Result<models::Device>;
 
     /// Set target temperature.
-    async fn set_temperature(&mut self, temperature: f32) -> Result<(), AppError>;
+    async fn set_temperature(&mut self, temperature: f32) -> Result<()>;
 }
 
 /// Used by the caller to get a result back from a command.
-type Responder<T> = oneshot::Sender<Result<T, AppError>>;
+type Responder<T> = oneshot::Sender<Result<T>>;
 
 /// Commands to send to the device channel.
 pub enum Command {
@@ -32,7 +32,7 @@ pub enum Command {
 
 /// Run handler task receiving commands via `rx` and forwards them to the `device`.
 #[instrument]
-pub async fn run<D>(mut device: D, mut rx: mpsc::Receiver<Command>) -> Result<(), AppError>
+pub async fn run<D>(mut device: D, mut rx: mpsc::Receiver<Command>) -> Result<()>
 where
     D: Device + std::fmt::Debug,
 {

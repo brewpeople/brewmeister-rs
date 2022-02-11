@@ -1,5 +1,5 @@
 use crate::devices::Device;
-use crate::AppError;
+use crate::Result;
 use std::time::Instant;
 use tracing::instrument;
 
@@ -30,7 +30,7 @@ impl Mock {
 #[async_trait::async_trait]
 impl Device for Mock {
     #[instrument]
-    async fn read(&self) -> Result<models::Device, AppError> {
+    async fn read(&self) -> Result<models::Device> {
         Ok(models::Device {
             current_temperature: Some(self.current_temperature()),
             target_temperature: Some(self.target_temperature),
@@ -41,7 +41,7 @@ impl Device for Mock {
     }
 
     #[instrument]
-    async fn set_temperature(&mut self, temperature: f32) -> Result<(), AppError> {
+    async fn set_temperature(&mut self, temperature: f32) -> Result<()> {
         self.last_time = Instant::now();
         self.last_temperature = self.current_temperature();
         self.target_temperature = temperature;

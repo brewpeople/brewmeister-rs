@@ -16,6 +16,7 @@ struct Opt {
     use_mock: bool,
 }
 
+/// Possible API errors.
 #[derive(Debug, Error)]
 pub enum AppError {
     #[error("Address parse failed: {0}")]
@@ -38,7 +39,10 @@ pub enum AppError {
     SqlError(#[from] sqlx::Error),
 }
 
-async fn try_main() -> Result<(), AppError> {
+/// API result type.
+pub type Result<T> = std::result::Result<T, AppError>;
+
+async fn try_main() -> Result<()> {
     dotenv::dotenv()?;
 
     let opts = Opt::parse();
