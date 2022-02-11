@@ -5,7 +5,7 @@ use axum::headers::{HeaderMap, HeaderValue};
 use axum::http::header::CONTENT_TYPE;
 use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Response};
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::{AddExtensionLayer, Json, Router};
 use include_dir::{include_dir, Dir};
 use tokio::sync::{mpsc, oneshot};
@@ -69,10 +69,26 @@ fn insert_header_from_extension(map: &mut HeaderMap, ext: &str) {
 
 #[instrument]
 async fn get_state(Extension(state): Extension<State>) -> Result<Json<models::Device>, AppError> {
-    let (tx, rx) = oneshot::channel();
-    let command = devices::Command::Read { resp: tx };
+    let (resp, rx) = oneshot::channel();
+    let command = devices::Command::Read { resp };
     let _ = state.tx.send(command).await;
     Ok(Json(rx.await??))
+}
+
+#[instrument(skip_all)]
+async fn set_temperature(
+    Json(payload): Json<models::TargetTemperature>,
+    Extension(state): Extension<State>,
+) -> Result<(), AppError> {
+    debug!("Set temperature to {}", payload.target_temperature);
+
+    let (resp, rx) = oneshot::channel();
+    let command = devices::Command::SetTemperature {
+        temperature: payload.target_temperature,
+        resp,
+    };
+    let _ = state.tx.send(command).await;
+    rx.await?
 }
 
 #[instrument(skip_all)]
@@ -138,6 +154,7 @@ pub async fn run(state: State) -> Result<(), AppError> {
         )
         .route("/:key", get(get_static))
         .route("/api/state", get(get_state))
+        .route("/api/temperature", post(set_temperature))
         .route("/api/recipes", get(get_recipes).post(post_recipe))
         .route("/api/recipes/:id", get(get_recipe))
         .layer(cors)

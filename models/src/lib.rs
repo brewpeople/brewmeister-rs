@@ -43,3 +43,9 @@ pub struct NewRecipe {
 pub struct Recipes {
     pub recipes: Vec<Recipe>,
 }
+
+/// A new target temperature to set on the device
+#[derive(Debug, Deserialize, Serialize)]
+pub struct TargetTemperature {
+    pub target_temperature: f32,
+}

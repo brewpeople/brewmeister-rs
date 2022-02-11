@@ -21,12 +21,18 @@ type Responder<T> = oneshot::Sender<Result<T, AppError>>;
 
 /// Commands to send to the device channel.
 pub enum Command {
-    Read { resp: Responder<models::Device> },
+    Read {
+        resp: Responder<models::Device>,
+    },
+    SetTemperature {
+        temperature: f32,
+        resp: Responder<()>,
+    },
 }
 
 /// Run handler task receiving commands via `rx` and forwards them to the `device`.
 #[instrument]
-pub async fn run<D>(device: D, mut rx: mpsc::Receiver<Command>) -> Result<(), AppError>
+pub async fn run<D>(mut device: D, mut rx: mpsc::Receiver<Command>) -> Result<(), AppError>
 where
     D: Device + std::fmt::Debug,
 {
@@ -34,6 +40,9 @@ where
         match command {
             Command::Read { resp } => {
                 let _ = resp.send(device.read().await);
+            }
+            Command::SetTemperature { temperature, resp } => {
+                let _ = resp.send(device.set_temperature(temperature).await);
             }
         }
     }
