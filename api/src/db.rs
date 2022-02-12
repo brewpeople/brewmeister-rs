@@ -19,6 +19,13 @@ struct Recipe {
     pub description: String,
 }
 
+#[derive(FromRow)]
+pub struct Step {
+    pub description: String,
+    pub target_temperature: i64,
+    pub duration: i64,
+}
+
 impl From<Recipe> for models::Recipe {
     fn from(recipe: Recipe) -> Self {
         Self {
@@ -26,6 +33,16 @@ impl From<Recipe> for models::Recipe {
             name: recipe.title,
             description: recipe.description,
             steps: vec![],
+        }
+    }
+}
+
+impl From<Step> for models::Step {
+    fn from(step: Step) -> Self {
+        Self {
+            description: step.description,
+            target_temperature: step.target_temperature as f32,
+            duration: std::time::Duration::from_secs(step.duration as u64),
         }
     }
 }
@@ -72,7 +89,22 @@ impl Database {
             .fetch_one(&self.pool)
             .await?;
 
-        Ok(recipe.into())
+        let steps = sqlx::query_as::<_, Step>("SELECT * from steps INNER JOIN recipe_steps ON recipe_steps.step_id = steps.id WHERE recipe_steps.recipe_id = ?")
+            .bind(id)
+            .fetch_all(&self.pool)
+            .await?
+            .into_iter()
+            .map(|step| step.into())
+            .collect::<Vec<models::Step>>();
+
+        let recipe = models::Recipe {
+            id: recipe.id,
+            name: recipe.title,
+            description: recipe.description,
+            steps,
+        };
+
+        Ok(recipe)
     }
 
     /// Add a recipe.
