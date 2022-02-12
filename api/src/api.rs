@@ -1,4 +1,4 @@
-use crate::{db, devices, AppError};
+use crate::{db, devices, AppError, Result};
 use axum::body;
 use axum::extract::{Extension, Path};
 use axum::headers::{HeaderMap, HeaderValue};
@@ -26,7 +26,7 @@ impl State {
     /// Create a new `State` obhject.
     ///
     /// Pass sender `tx` used to map API calls to device requests.
-    pub async fn new(tx: mpsc::Sender<devices::Command>) -> Result<Self, AppError> {
+    pub async fn new(tx: mpsc::Sender<devices::Command>) -> Result<Self> {
         Ok(Self {
             db: db::Database::new().await?,
             tx,
@@ -68,7 +68,7 @@ fn insert_header_from_extension(map: &mut HeaderMap, ext: &str) {
 }
 
 #[instrument]
-async fn get_state(Extension(state): Extension<State>) -> Result<Json<models::Device>, AppError> {
+async fn get_state(Extension(state): Extension<State>) -> Result<Json<models::Device>> {
     let (resp, rx) = oneshot::channel();
     let command = devices::Command::Read { resp };
     let _ = state.tx.send(command).await;
@@ -79,7 +79,7 @@ async fn get_state(Extension(state): Extension<State>) -> Result<Json<models::De
 async fn set_temperature(
     Json(payload): Json<models::TargetTemperature>,
     Extension(state): Extension<State>,
-) -> Result<(), AppError> {
+) -> Result<()> {
     debug!("Set temperature to {}", payload.target_temperature);
 
     let (resp, rx) = oneshot::channel();
@@ -92,9 +92,7 @@ async fn set_temperature(
 }
 
 #[instrument(skip_all)]
-async fn get_recipes(
-    Extension(state): Extension<State>,
-) -> Result<Json<models::Recipes>, AppError> {
+async fn get_recipes(Extension(state): Extension<State>) -> Result<Json<models::Recipes>> {
     let recipes = state.db.recipes().await?;
     Ok(Json(recipes))
 }
@@ -103,21 +101,20 @@ async fn get_recipes(
 async fn get_recipe(
     Path(id): Path<i64>,
     Extension(state): Extension<State>,
-) -> Result<Json<models::Recipe>, AppError> {
+) -> Result<Json<models::Recipe>> {
     let recipe = state.db.recipe(id).await?;
 
     Ok(Json(recipe))
 }
 
 #[instrument(skip_all)]
-async fn post_recipe(Json(payload): Json<models::NewRecipe>, Extension(state): Extension<State>) {
+async fn post_recipe(
+    Json(payload): Json<models::NewRecipe>,
+    Extension(state): Extension<State>,
+) -> Result<()> {
     debug!("Storing {:?}", payload);
 
-    state
-        .db
-        .add_recipe(payload)
-        .await
-        .expect("do not fail now, handle me later");
+    state.db.add_recipe(payload).await
 }
 
 #[instrument]
@@ -141,7 +138,7 @@ async fn get_static(Path(path): Path<String>) -> (StatusCode, HeaderMap, Vec<u8>
 
 /// Start the web server.
 #[instrument]
-pub async fn run(state: State) -> Result<(), AppError> {
+pub async fn run(state: State) -> Result<()> {
     // Only useful if we run the app via `trunk serve`, if not we serve the static files directly.
     let cors = CorsLayer::new()
         .allow_origin(Origin::exact("http://0.0.0.0:8080".parse()?))
