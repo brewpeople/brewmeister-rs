@@ -111,10 +111,11 @@ async fn get_recipe(
 async fn post_recipe(
     Json(payload): Json<models::NewRecipe>,
     Extension(state): Extension<State>,
-) -> Result<()> {
+) -> Result<Json<models::NewRecipeResponse>> {
     debug!("Storing {:?}", payload);
 
-    state.db.add_recipe(payload).await
+    let result = state.db.add_recipe(payload).await?;
+    Ok(Json(result))
 }
 
 #[instrument]

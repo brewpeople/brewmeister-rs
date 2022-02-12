@@ -76,13 +76,15 @@ impl Database {
 
     /// Add a recipe.
     #[instrument]
-    pub async fn add_recipe(&self, recipe: models::NewRecipe) -> Result<()> {
-        sqlx::query("INSERT INTO recipes (title, description) VALUES (?, ?)")
+    pub async fn add_recipe(&self, recipe: models::NewRecipe) -> Result<models::NewRecipeResponse> {
+        let result = sqlx::query("INSERT INTO recipes (title, description) VALUES (?, ?)")
             .bind(recipe.name)
             .bind(recipe.description)
             .execute(&self.pool)
             .await?;
 
-        Ok(())
+        Ok(models::NewRecipeResponse {
+            id: result.last_insert_rowid(),
+        })
     }
 }

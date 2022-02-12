@@ -38,6 +38,12 @@ pub struct NewRecipe {
     pub steps: Vec<Step>,
 }
 
+/// Result identifier of the new recipe.
+#[derive(Debug, Deserialize, Serialize)]
+pub struct NewRecipeResponse {
+    pub id: i64,
+}
+
 /// Multiple recipes.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Recipes {
