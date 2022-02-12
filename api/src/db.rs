@@ -1,4 +1,5 @@
-use crate::Result;
+use crate::{AppError, Result};
+use futures::future::try_join_all;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
 use sqlx::{ConnectOptions, FromRow};
 use std::convert::From;
@@ -83,8 +84,28 @@ impl Database {
             .execute(&self.pool)
             .await?;
 
-        Ok(models::NewRecipeResponse {
-            id: result.last_insert_rowid(),
-        })
+        let id = result.last_insert_rowid();
+
+        // TODO: check which steps already exist
+        let futures = recipe.steps.iter().map(|step| async {
+            let result = sqlx::query("INSERT INTO steps (description, target_temperature, duration) VALUES (?, ?, ?)")
+                .bind(&step.description)
+                .bind(&step.target_temperature)
+                .bind(step.duration.as_secs() as i64)
+                .execute(&self.pool).await?;
+
+            Ok::<_, AppError>(result.last_insert_rowid())
+        }).collect::<Vec<_>>();
+
+        for (pos, step_id) in try_join_all(futures).await?.iter().enumerate() {
+            sqlx::query("INSERT INTO recipe_steps (recipe_id, step_id, position) VALUES (?, ?, ?)")
+                .bind(id)
+                .bind(step_id)
+                .bind(pos as i64)
+                .execute(&self.pool)
+                .await?;
+        }
+
+        Ok(models::NewRecipeResponse { id })
     }
 }
