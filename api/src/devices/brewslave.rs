@@ -1,6 +1,6 @@
 use crate::devices::Device;
 use crate::Result;
-use tracing::{debug, instrument};
+use tracing::{trace, instrument};
 
 #[derive(Debug)]
 pub struct Brewslave {
@@ -18,10 +18,10 @@ impl Brewslave {
 #[async_trait::async_trait]
 impl Device for Brewslave {
     /// Set up the serial connection and poll for new temperature, stirrer and heater values.
-    #[instrument]
+    #[instrument(skip_all)]
     async fn read(&self) -> Result<models::Device> {
         let state = self.client.read_state().await?;
-        debug!("read {:?}", state);
+        trace!("read {:?}", state);
 
         Ok(models::Device {
             current_temperature: state.current_temperature,
