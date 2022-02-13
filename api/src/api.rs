@@ -78,22 +78,6 @@ async fn get_state(Extension(state): Extension<State>) -> Result<Json<models::De
 }
 
 #[instrument(skip_all)]
-async fn set_temperature(
-    Json(payload): Json<models::TargetTemperature>,
-    Extension(state): Extension<State>,
-) -> Result<()> {
-    debug!("Set temperature to {}", payload.target_temperature);
-
-    let (resp, rx) = oneshot::channel();
-    let command = devices::Command::SetTemperature {
-        temperature: payload.target_temperature,
-        resp,
-    };
-    let _ = state.device_tx.send(command).await;
-    rx.await?
-}
-
-#[instrument(skip_all)]
 async fn get_recipes(Extension(state): Extension<State>) -> Result<Json<models::Recipes>> {
     let recipes = state.db.recipes().await?;
     Ok(Json(recipes))
@@ -131,7 +115,7 @@ async fn post_brew(
     Ok(Json(result))
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(state))]
 async fn start_brew(Path(id): Path<i64>, Extension(state): Extension<State>) -> Result<()> {
     debug!("Start brew");
 
@@ -139,7 +123,7 @@ async fn start_brew(Path(id): Path<i64>, Extension(state): Extension<State>) -> 
     let (resp, _) = oneshot::channel();
     let command = program::Command::Start { steps, resp };
     let _ = state.brew_tx.send(command).await;
-    // rx.await?
+
     Ok(())
 }
 
@@ -181,7 +165,6 @@ pub async fn run(state: State) -> Result<()> {
         .route("/api/recipes", get(get_recipes).post(post_recipe))
         .route("/api/recipes/:id", get(get_recipe))
         .route("/api/state", get(get_state))
-        .route("/api/temperature", post(set_temperature))
         .layer(cors)
         .layer(ServiceBuilder::new().layer(AddExtensionLayer::new(state)));
 
