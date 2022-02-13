@@ -64,7 +64,10 @@ async fn wait_for(tx: devices::Sender, temperature: f32) -> Result<()> {
 #[instrument(skip_all)]
 async fn run_program(tx: devices::Sender, steps: Vec<models::Step>) -> Result<()> {
     for step in steps {
-        info!("Set target temperature to {}C and wait", step.target_temperature);
+        info!(
+            "Set target temperature to {}C and wait",
+            step.target_temperature
+        );
         set_temperature(tx.clone(), step.target_temperature).await?;
         wait_for(tx.clone(), step.target_temperature).await?;
 

@@ -1,6 +1,6 @@
 use crate::devices::Device;
 use crate::Result;
-use tracing::{trace, instrument};
+use tracing::{instrument, trace};
 
 #[derive(Debug)]
 pub struct Brewslave {
