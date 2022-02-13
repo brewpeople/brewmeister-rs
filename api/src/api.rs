@@ -1,4 +1,4 @@
-use crate::{db, devices, AppError, Result};
+use crate::{db, devices, program, AppError, Result};
 use axum::body;
 use axum::extract::{Extension, Path};
 use axum::headers::{HeaderMap, HeaderValue};
@@ -8,7 +8,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{AddExtensionLayer, Json, Router};
 use include_dir::{include_dir, Dir};
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::oneshot;
 use tower::ServiceBuilder;
 use tower_http::cors::{CorsLayer, Origin};
 use tracing::{debug, instrument, warn};
@@ -19,17 +19,19 @@ static DIST_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../app/dist");
 #[derive(Clone, Debug)]
 pub struct State {
     db: db::Database,
-    tx: mpsc::Sender<devices::Command>,
+    device_tx: devices::Sender,
+    brew_tx: program::Sender,
 }
 
 impl State {
     /// Create a new `State` obhject.
     ///
     /// Pass sender `tx` used to map API calls to device requests.
-    pub async fn new(tx: mpsc::Sender<devices::Command>) -> Result<Self> {
+    pub async fn new(device_tx: devices::Sender, brew_tx: program::Sender) -> Result<Self> {
         Ok(Self {
             db: db::Database::new().await?,
-            tx,
+            device_tx,
+            brew_tx,
         })
     }
 }
@@ -71,7 +73,7 @@ fn insert_header_from_extension(map: &mut HeaderMap, ext: &str) {
 async fn get_state(Extension(state): Extension<State>) -> Result<Json<models::Device>> {
     let (resp, rx) = oneshot::channel();
     let command = devices::Command::Read { resp };
-    let _ = state.tx.send(command).await;
+    let _ = state.device_tx.send(command).await;
     Ok(Json(rx.await??))
 }
 
@@ -87,7 +89,7 @@ async fn set_temperature(
         temperature: payload.target_temperature,
         resp,
     };
-    let _ = state.tx.send(command).await;
+    let _ = state.device_tx.send(command).await;
     rx.await?
 }
 
@@ -129,6 +131,18 @@ async fn post_brew(
     Ok(Json(result))
 }
 
+#[instrument(skip_all)]
+async fn start_brew(Path(id): Path<i64>, Extension(state): Extension<State>) -> Result<()> {
+    debug!("Start brew");
+
+    let steps = state.db.recipe_for_brew(id).await?.steps;
+    let (resp, _) = oneshot::channel();
+    let command = program::Command::Start { steps, resp };
+    let _ = state.brew_tx.send(command).await;
+    // rx.await?
+    Ok(())
+}
+
 #[instrument]
 async fn get_static(Path(path): Path<String>) -> (StatusCode, HeaderMap, Vec<u8>) {
     let mut headers = HeaderMap::new();
@@ -163,6 +177,7 @@ pub async fn run(state: State) -> Result<()> {
         )
         .route("/:key", get(get_static))
         .route("/api/brews", post(post_brew))
+        .route("/api/brews/:id", post(start_brew))
         .route("/api/recipes", get(get_recipes).post(post_recipe))
         .route("/api/recipes/:id", get(get_recipe))
         .route("/api/state", get(get_state))

@@ -30,6 +30,9 @@ pub enum Command {
     },
 }
 
+/// Type alias for the command sender.
+pub type Sender = mpsc::Sender<Command>;
+
 /// Run handler task receiving commands via `rx` and forwards them to the `device`.
 #[instrument]
 pub async fn run<D>(mut device: D, mut rx: mpsc::Receiver<Command>) -> Result<()>

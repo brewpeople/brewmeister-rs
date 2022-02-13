@@ -26,6 +26,11 @@ pub struct Step {
     pub duration: i64,
 }
 
+#[derive(FromRow)]
+pub struct Brew {
+    pub recipe_id: i64,
+}
+
 impl From<Recipe> for models::Recipe {
     fn from(recipe: Recipe) -> Self {
         Self {
@@ -151,5 +156,16 @@ impl Database {
             .last_insert_rowid();
 
         Ok(models::NewBrewResponse { id })
+    }
+
+    /// Get recipe by id.
+    #[instrument]
+    pub async fn recipe_for_brew(&self, brew_id: i64) -> Result<models::Recipe> {
+        let brew = sqlx::query_as::<_, Brew>("SELECT recipe_id from brews WHERE id = ?")
+            .bind(brew_id)
+            .fetch_one(&self.pool)
+            .await?;
+
+        self.recipe(brew.recipe_id).await
     }
 }

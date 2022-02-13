@@ -8,6 +8,7 @@ use tracing::error;
 mod api;
 mod db;
 mod devices;
+mod program;
 
 #[derive(Parser)]
 struct Opt {
@@ -47,19 +48,21 @@ async fn try_main() -> Result<()> {
 
     let opts = Opt::parse();
 
-    let (tx, rx) = mpsc::channel(32);
+    let (device_tx, device_rx) = mpsc::channel(32);
+    let (brew_tx, brew_rx) = mpsc::channel(32);
 
-    let state = api::State::new(tx).await?;
+    let brew_future = program::run(device_tx.clone(), brew_rx);
+    let state = api::State::new(device_tx, brew_tx).await?;
     let server_future = api::run(state);
 
     if opts.use_mock {
         let device = devices::mock::Mock::new();
-        let comm_future = devices::run(device, rx);
-        try_join!(server_future, comm_future)?;
+        let comm_future = devices::run(device, device_rx);
+        try_join!(server_future, comm_future, brew_future)?;
     } else {
         let device = devices::brewslave::Brewslave::new()?;
-        let comm_future = devices::run(device, rx);
-        try_join!(server_future, comm_future)?;
+        let comm_future = devices::run(device, device_rx);
+        try_join!(server_future, comm_future, brew_future)?;
     }
 
     Ok(())
