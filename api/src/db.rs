@@ -140,4 +140,16 @@ impl Database {
 
         Ok(models::NewRecipeResponse { id })
     }
+
+    /// Add a brew.
+    #[instrument]
+    pub async fn add_brew(&self, brew: models::NewBrew) -> Result<models::NewBrewResponse> {
+        let id = sqlx::query("INSERT INTO brews (recipe_id) VALUES (?)")
+            .bind(brew.recipe_id)
+            .execute(&self.pool)
+            .await?
+            .last_insert_rowid();
+
+        Ok(models::NewBrewResponse { id })
+    }
 }

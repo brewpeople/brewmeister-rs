@@ -118,6 +118,17 @@ async fn post_recipe(
     Ok(Json(result))
 }
 
+#[instrument(skip_all)]
+async fn post_brew(
+    Json(payload): Json<models::NewBrew>,
+    Extension(state): Extension<State>,
+) -> Result<Json<models::NewBrewResponse>> {
+    debug!("New brew {:?}", payload);
+
+    let result = state.db.add_brew(payload).await?;
+    Ok(Json(result))
+}
+
 #[instrument]
 async fn get_static(Path(path): Path<String>) -> (StatusCode, HeaderMap, Vec<u8>) {
     let mut headers = HeaderMap::new();
@@ -151,10 +162,11 @@ pub async fn run(state: State) -> Result<()> {
             get(|| async { get_static(Path("index.html".into())).await }),
         )
         .route("/:key", get(get_static))
-        .route("/api/state", get(get_state))
-        .route("/api/temperature", post(set_temperature))
+        .route("/api/brews", post(post_brew))
         .route("/api/recipes", get(get_recipes).post(post_recipe))
         .route("/api/recipes/:id", get(get_recipe))
+        .route("/api/state", get(get_state))
+        .route("/api/temperature", post(set_temperature))
         .layer(cors)
         .layer(ServiceBuilder::new().layer(AddExtensionLayer::new(state)));
 

@@ -44,6 +44,18 @@ pub struct NewRecipeResponse {
     pub id: i64,
 }
 
+/// A new recipe going to be stored in the database.
+#[derive(Debug, Deserialize, Serialize)]
+pub struct NewBrew {
+    pub recipe_id: i64,
+}
+
+/// Result identifier of a new brew.
+#[derive(Debug, Deserialize, Serialize)]
+pub struct NewBrewResponse {
+    pub id: i64,
+}
+
 /// Multiple recipes.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Recipes {
