@@ -8,7 +8,6 @@ axum = { version = "0.4", features = ["headers"] }
 async-trait = "*"
 clap = { version = "3", features = ["derive"] }
 comm = { path = "../comm" }
-dotenv = "0"
 log = "0"
 futures = "0"
 hyper = { version = "*", default-features = false }

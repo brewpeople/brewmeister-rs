@@ -3,7 +3,6 @@ use futures::future::try_join_all;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
 use sqlx::{ConnectOptions, FromRow};
 use std::convert::From;
-use std::env;
 use std::str::FromStr;
 use tracing::{info, instrument};
 
@@ -55,8 +54,8 @@ impl From<Step> for models::Step {
 impl Database {
     /// Create new database. Use the environment variable `DATABASE_URL` to point to a valid sqlite
     /// database file.
-    pub async fn new() -> Result<Self> {
-        let url = env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite::memory:".to_string());
+    pub async fn new(database: Option<String>) -> Result<Self> {
+        let url = database.unwrap_or_else(|| "sqlite::memory:".to_string());
 
         info!("Connecting to {url}");
 

@@ -72,7 +72,6 @@ dependencies = [
  "axum",
  "clap",
  "comm",
- "dotenv",
  "futures",
  "hyper",
  "include_dir",

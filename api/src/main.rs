@@ -27,8 +27,6 @@ pub enum AppError {
     CommError(#[from] comm::Error),
     #[error("Could not read configuration: {0}")]
     ConfigurationError(#[from] toml::de::Error),
-    #[error("Reading .env failed: {0}")]
-    DotenvError(#[from] dotenv::Error),
     #[error("Hyper error: {0}")]
     HyperError(#[from] hyper::Error),
     #[error("Internal error: {0}")]
@@ -47,8 +45,6 @@ pub enum AppError {
 pub type Result<T> = std::result::Result<T, AppError>;
 
 async fn try_main() -> Result<()> {
-    dotenv::dotenv()?;
-
     let opts = Opt::parse();
     let config = config::Config::new()?;
 
@@ -56,7 +52,8 @@ async fn try_main() -> Result<()> {
     let (brew_tx, brew_rx) = mpsc::channel(32);
 
     let brew_future = program::run(device_tx.clone(), brew_rx);
-    let state = api::State::new(device_tx, brew_tx).await?;
+    let db = db::Database::new(config.database).await?;
+    let state = api::State::new(db, device_tx, brew_tx).await?;
     let server_future = api::run(state);
 
     if opts.use_mock {

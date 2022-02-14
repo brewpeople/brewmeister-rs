@@ -8,18 +8,23 @@ const DEFAULT_DEVICE_PATH: &str = "/dev/ttyACM0";
 pub struct Config {
     /// Path to the brewslave device. By default this is /dev/ttyACM0.
     pub device: PathBuf,
+    /// Path to the database file or `None`.
+    pub database: Option<String>,
 }
 
 #[derive(Deserialize)]
 struct Serialized {
     #[serde(default)]
     device: Option<PathBuf>,
+    #[serde(default)]
+    database: Option<String>,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
             device: PathBuf::from(DEFAULT_DEVICE_PATH),
+            database: None,
         }
     }
 }
@@ -37,6 +42,7 @@ impl Config {
                 device: config
                     .device
                     .unwrap_or_else(|| PathBuf::from(DEFAULT_DEVICE_PATH)),
+                database: config.database,
             })
         } else {
             Ok(Self::default())

@@ -27,9 +27,13 @@ impl State {
     /// Create a new `State` obhject.
     ///
     /// Pass sender `tx` used to map API calls to device requests.
-    pub async fn new(device_tx: devices::Sender, brew_tx: program::Sender) -> Result<Self> {
+    pub async fn new(
+        db: db::Database,
+        device_tx: devices::Sender,
+        brew_tx: program::Sender,
+    ) -> Result<Self> {
         Ok(Self {
-            db: db::Database::new().await?,
+            db,
             device_tx,
             brew_tx,
         })
