@@ -61,6 +61,7 @@ impl Database {
         info!("Connecting to {url}");
 
         let options = SqliteConnectOptions::from_str(&url)?
+            .create_if_missing(true)
             .disable_statement_logging()
             .to_owned();
 
