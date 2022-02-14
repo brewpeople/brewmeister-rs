@@ -34,7 +34,7 @@ pub struct Brew {
 impl From<Recipe> for models::Recipe {
     fn from(recipe: Recipe) -> Self {
         Self {
-            id: recipe.id,
+            id: recipe.id.into(),
             name: recipe.title,
             description: recipe.description,
             steps: vec![],
@@ -104,7 +104,7 @@ impl Database {
             .collect::<Vec<models::Step>>();
 
         let recipe = models::Recipe {
-            id: recipe.id,
+            id: recipe.id.into(),
             name: recipe.title,
             description: recipe.description,
             steps,
@@ -144,19 +144,21 @@ impl Database {
                 .await?;
         }
 
-        Ok(models::NewRecipeResponse { id })
+        Ok(models::NewRecipeResponse { id: id.into() })
     }
 
     /// Add a brew.
     #[instrument]
     pub async fn add_brew(&self, brew: models::NewBrew) -> Result<models::NewBrewResponse> {
+        let brew_id: i64 = brew.id.into();
+
         let id = sqlx::query("INSERT INTO brews (recipe_id) VALUES (?)")
-            .bind(brew.recipe_id)
+            .bind(brew_id)
             .execute(&self.pool)
             .await?
             .last_insert_rowid();
 
-        Ok(models::NewBrewResponse { id })
+        Ok(models::NewBrewResponse { id: id.into() })
     }
 
     /// Get recipe by id.

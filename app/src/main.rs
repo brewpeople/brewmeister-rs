@@ -20,7 +20,7 @@ enum Route {
     #[at("/")]
     Home,
     #[at("/recipes/:id")]
-    Recipe { id: i64 },
+    Recipe { id: models::RecipeId },
     #[at("/recipes")]
     Recipes,
     #[at("/new")]
@@ -145,7 +145,7 @@ fn switch(routes: &Route) -> Html {
         Route::NewBrew => html! { <pages::NewBrew/> },
         Route::NotFound => html! { <pages::NotFound/> },
         Route::Recipes => html! { <pages::Recipes/> },
-        Route::Recipe { id } => html! { <pages::Recipe id={*id} /> },
+        Route::Recipe { id } => html! { <pages::Recipe id={id.0} /> },
     }
 }
 

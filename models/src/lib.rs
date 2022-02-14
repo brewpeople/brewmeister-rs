@@ -1,4 +1,7 @@
 use serde::{Deserialize, Serialize};
+use std::convert::From;
+use std::fmt::Display;
+use std::str::FromStr;
 
 /// Device state.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -20,11 +23,41 @@ pub struct Step {
     pub duration: std::time::Duration,
 }
 
+/// Recipe identifier newtype.
+#[derive(Copy, Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct RecipeId(pub i64);
+
+impl Display for RecipeId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl FromStr for RecipeId {
+    type Err = <i64 as FromStr>::Err;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        s.parse::<i64>().map(|x| Self(x))
+    }
+}
+
+impl From<i64> for RecipeId {
+    fn from(id: i64) -> Self {
+        Self(id)
+    }
+}
+
+impl From<RecipeId> for i64 {
+    fn from(id: RecipeId) -> Self {
+        id.0
+    }
+}
+
 /// Single recipe consisting of name and steps.
 /// TODO: add additional metadata not related to the brewing itself.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Recipe {
-    pub id: i64,
+    pub id: RecipeId,
     pub name: String,
     pub description: String,
     pub steps: Vec<Step>,
@@ -41,19 +74,35 @@ pub struct NewRecipe {
 /// Result identifier of the new recipe.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct NewRecipeResponse {
-    pub id: i64,
+    pub id: RecipeId,
 }
 
 /// A new recipe going to be stored in the database.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct NewBrew {
-    pub recipe_id: i64,
+    pub id: RecipeId,
+}
+
+/// Brew identifier newtype.
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct BrewId(i64);
+
+impl From<i64> for BrewId {
+    fn from(id: i64) -> Self {
+        Self(id)
+    }
+}
+
+impl From<BrewId> for i64 {
+    fn from(id: BrewId) -> Self {
+        id.0
+    }
 }
 
 /// Result identifier of a new brew.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct NewBrewResponse {
-    pub id: i64,
+    pub id: BrewId,
 }
 
 /// Multiple recipes.
