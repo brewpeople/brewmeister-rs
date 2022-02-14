@@ -125,7 +125,7 @@ async fn start_brew(Path(id): Path<i64>, Extension(state): Extension<State>) -> 
 
     let steps = state.db.recipe_for_brew(id).await?.steps;
     let (resp, _) = oneshot::channel();
-    let command = program::Command::Start { steps, resp };
+    let command = program::Command::Start { id, steps, resp };
     let _ = state.brew_tx.send(command).await;
 
     Ok(())

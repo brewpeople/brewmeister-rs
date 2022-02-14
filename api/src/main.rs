@@ -39,6 +39,8 @@ pub enum AppError {
     ParseError(#[from] serde_json::Error),
     #[error("Database problem: {0}")]
     SqlError(#[from] sqlx::Error),
+    #[error("System time error: {0}")]
+    SystemTimeError(#[from] std::time::SystemTimeError),
 }
 
 /// API result type.
@@ -51,8 +53,8 @@ async fn try_main() -> Result<()> {
     let (device_tx, device_rx) = mpsc::channel(32);
     let (brew_tx, brew_rx) = mpsc::channel(32);
 
-    let brew_future = program::run(device_tx.clone(), brew_rx);
     let db = db::Database::new(config.database).await?;
+    let brew_future = program::run(device_tx.clone(), brew_rx, db.clone());
     let state = api::State::new(db, device_tx, brew_tx).await?;
     let server_future = api::run(state);
 

@@ -4,6 +4,7 @@ use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions};
 use sqlx::{ConnectOptions, FromRow};
 use std::convert::From;
 use std::str::FromStr;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tracing::{info, instrument};
 
 #[derive(Clone, Debug)]
@@ -166,5 +167,22 @@ impl Database {
             .await?;
 
         self.recipe(brew.recipe_id).await
+    }
+
+    /// Add new sample.
+    #[instrument]
+    pub async fn add_sample(&self, brew_id: i64, temperature: f32) -> Result<()> {
+        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH)?;
+
+        sqlx::query(
+            "INSERT INTO brew_measurements (brew_id, timestamp, brew_temperature) VALUES (?, ?, ?)",
+        )
+        .bind(brew_id)
+        .bind(timestamp.as_secs() as i64)
+        .bind(temperature)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
     }
 }

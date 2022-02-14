@@ -12,6 +12,7 @@ type Responder<T> = oneshot::Sender<Result<T>>;
 /// Commands to send to the program channel.
 pub enum Command {
     Start {
+        id: i64,
         steps: Vec<models::Step>,
         resp: Responder<()>,
     },
@@ -37,12 +38,19 @@ async fn read_temperature(tx: devices::Sender) -> Result<Option<f32>> {
 }
 
 #[instrument(skip(tx))]
-async fn wait_for(tx: devices::Sender, temperature: f32) -> Result<()> {
+async fn wait_for(
+    id: i64,
+    tx: devices::Sender,
+    temperature: f32,
+    db: crate::db::Database,
+) -> Result<()> {
     loop {
         let cloned = tx.clone();
 
         match read_temperature(cloned).await? {
             Some(current) => {
+                db.add_sample(id, current).await?;
+
                 if (current - temperature).abs() < 0.5 {
                     info!("Reached {:.2}C", current);
                     break;
@@ -62,14 +70,19 @@ async fn wait_for(tx: devices::Sender, temperature: f32) -> Result<()> {
 
 /// Run the given program `steps` until completion.
 #[instrument(skip_all)]
-async fn run_program(tx: devices::Sender, steps: Vec<models::Step>) -> Result<()> {
+async fn run_program(
+    id: i64,
+    tx: devices::Sender,
+    steps: Vec<models::Step>,
+    db: crate::db::Database,
+) -> Result<()> {
     for step in steps {
         info!(
             "Set target temperature to {}C and wait",
             step.target_temperature
         );
         set_temperature(tx.clone(), step.target_temperature).await?;
-        wait_for(tx.clone(), step.target_temperature).await?;
+        wait_for(id, tx.clone(), step.target_temperature, db.clone()).await?;
 
         info!("Target temperature reached, waiting {:?}", step.duration);
         sleep(step.duration).await;
@@ -80,14 +93,18 @@ async fn run_program(tx: devices::Sender, steps: Vec<models::Step>) -> Result<()
 
 /// Run handler task receiving brew commands via `rx` and use `tx` to send device commands.
 #[instrument(skip_all)]
-pub async fn run(tx: devices::Sender, mut rx: mpsc::Receiver<Command>) -> Result<()> {
+pub async fn run(
+    tx: devices::Sender,
+    mut rx: mpsc::Receiver<Command>,
+    db: crate::db::Database,
+) -> Result<()> {
     while let Some(command) = rx.recv().await {
         let cloned = tx.clone();
 
         match command {
-            Command::Start { steps, resp } => {
+            Command::Start { id, steps, resp } => {
                 // TODO: check if we are already running a brew program.
-                let _ = resp.send(run_program(cloned, steps).await);
+                let _ = resp.send(run_program(id, cloned, steps, db.clone()).await);
             }
         }
     }
