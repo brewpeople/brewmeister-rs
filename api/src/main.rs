@@ -6,6 +6,7 @@ use tokio::try_join;
 use tracing::error;
 
 mod api;
+mod config;
 mod db;
 mod devices;
 mod program;
@@ -24,6 +25,8 @@ pub enum AppError {
     AddrParseError(#[from] std::net::AddrParseError),
     #[error("Serial communication error: {0}")]
     CommError(#[from] comm::Error),
+    #[error("Could not read configuration: {0}")]
+    ConfigurationError(#[from] toml::de::Error),
     #[error("Reading .env failed: {0}")]
     DotenvError(#[from] dotenv::Error),
     #[error("Hyper error: {0}")]
@@ -47,6 +50,7 @@ async fn try_main() -> Result<()> {
     dotenv::dotenv()?;
 
     let opts = Opt::parse();
+    let config = config::Config::new()?;
 
     let (device_tx, device_rx) = mpsc::channel(32);
     let (brew_tx, brew_rx) = mpsc::channel(32);
@@ -60,7 +64,7 @@ async fn try_main() -> Result<()> {
         let comm_future = devices::run(device, device_rx);
         try_join!(server_future, comm_future, brew_future)?;
     } else {
-        let device = devices::brewslave::Brewslave::new()?;
+        let device = devices::brewslave::Brewslave::new(&config.device)?;
         let comm_future = devices::run(device, device_rx);
         try_join!(server_future, comm_future, brew_future)?;
     }

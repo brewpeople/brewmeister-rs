@@ -1,5 +1,6 @@
 use crate::devices::Device;
 use crate::Result;
+use std::path::Path;
 use tracing::{instrument, trace};
 
 #[derive(Debug)]
@@ -8,9 +9,9 @@ pub struct Brewslave {
 }
 
 impl Brewslave {
-    pub fn new() -> Result<Self> {
+    pub fn new(path: &Path) -> Result<Self> {
         Ok(Self {
-            client: comm::Comm::new()?,
+            client: comm::Comm::new(path)?,
         })
     }
 }

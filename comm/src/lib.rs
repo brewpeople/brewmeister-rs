@@ -1,6 +1,7 @@
 //! Serial communication with the Brewslave.
 
 use byteorder::{ByteOrder, LittleEndian};
+use std::path::Path;
 use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::RwLock;
@@ -62,8 +63,8 @@ impl Comm {
     /// Create a new communication structure.
     ///
     /// As of now, it tries to open `/dev/tty/ACM0`.
-    pub fn new() -> Result<Self, Error> {
-        let stream = tokio_serial::new("/dev/ttyACM0", 115200)
+    pub fn new(path: &Path) -> Result<Self, Error> {
+        let stream = tokio_serial::new(path.to_string_lossy(), 115200)
             .flow_control(tokio_serial::FlowControl::None)
             .data_bits(tokio_serial::DataBits::Eight)
             .parity(tokio_serial::Parity::None)

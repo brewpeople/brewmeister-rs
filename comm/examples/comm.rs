@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use rand::Rng;
+use std::path::PathBuf;
 
 fn parse_temperature(src: &str) -> Result<f32> {
     let temperature = src.parse::<f32>()?;
@@ -80,7 +81,7 @@ async fn main() -> Result<()> {
     env_logger::init();
 
     let opts = Opt::parse();
-    let client = comm::Comm::new()?;
+    let client = comm::Comm::new(&PathBuf::from("/dev/ttyACM0"))?;
 
     match opts {
         Opt::StressTest {} => {
