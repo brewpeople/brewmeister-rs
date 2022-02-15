@@ -21,8 +21,8 @@ struct Recipe {
 
 #[derive(FromRow)]
 pub struct Step {
-    pub description: String,
-    pub target_temperature: i64,
+    pub position: i64,
+    pub target_temperature: f32,
     pub duration: i64,
 }
 
@@ -45,8 +45,7 @@ impl From<Recipe> for models::Recipe {
 impl From<Step> for models::Step {
     fn from(step: Step) -> Self {
         Self {
-            description: step.description,
-            target_temperature: step.target_temperature as f32,
+            target_temperature: step.target_temperature,
             duration: std::time::Duration::from_secs(step.duration as u64),
         }
     }
@@ -95,7 +94,7 @@ impl Database {
             .fetch_one(&self.pool)
             .await?;
 
-        let steps = sqlx::query_as::<_, Step>("SELECT * from steps INNER JOIN recipe_steps ON recipe_steps.step_id = steps.id WHERE recipe_steps.recipe_id = ?")
+        let steps = sqlx::query_as::<_, Step>("SELECT * from steps WHERE recipe_id = ?")
             .bind(id)
             .fetch_all(&self.pool)
             .await?
@@ -124,25 +123,26 @@ impl Database {
 
         let id = result.last_insert_rowid();
 
-        // TODO: check which steps already exist
-        let futures = recipe.steps.iter().map(|step| async {
-            let result = sqlx::query("INSERT INTO steps (description, target_temperature, duration) VALUES (?, ?, ?)")
-                .bind(&step.description)
+        let futures = recipe
+            .steps
+            .into_iter()
+            .enumerate()
+            .map(|(pos, step)| async move {
+                sqlx::query(
+                    "INSERT INTO steps (recipe_id, position, target_temperature, duration) VALUES (?, ?, ?, ?)",
+                )
+                .bind(id)
+                .bind(pos as i64)
                 .bind(&step.target_temperature)
                 .bind(step.duration.as_secs() as i64)
-                .execute(&self.pool).await?;
-
-            Ok::<_, AppError>(result.last_insert_rowid())
-        }).collect::<Vec<_>>();
-
-        for (pos, step_id) in try_join_all(futures).await?.iter().enumerate() {
-            sqlx::query("INSERT INTO recipe_steps (recipe_id, step_id, position) VALUES (?, ?, ?)")
-                .bind(id)
-                .bind(step_id)
-                .bind(pos as i64)
                 .execute(&self.pool)
                 .await?;
-        }
+
+                Ok::<_, AppError>(())
+            })
+            .collect::<Vec<_>>();
+
+        try_join_all(futures).await?;
 
         Ok(models::NewRecipeResponse { id: id.into() })
     }

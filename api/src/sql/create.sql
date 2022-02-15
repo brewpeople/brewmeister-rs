@@ -1,25 +1,16 @@
-CREATE TABLE IF NOT EXISTS steps (
-    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    title TEXT,
-    description TEXT,
-    target_temperature INTEGER,
-    duration INTEGER,
-    confirmation_required INTEGER
-);
-
 CREATE TABLE IF NOT EXISTS recipes (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     title TEXT,
     description TEXT
 );
 
-CREATE TABLE IF NOT EXISTS recipe_steps (
+CREATE TABLE IF NOT EXISTS steps (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     recipe_id INTEGER NOT NULL,
-    step_id INTEGER NOT NULL,
     position INTEGER NOT NULL,
+    target_temperature REAL,
+    duration INTEGER,
     FOREIGN KEY(recipe_id) REFERENCES recipes(id)
-    FOREIGN KEY(step_id) REFERENCES steps(id)
 );
 
 CREATE TABLE IF NOT EXISTS brews (

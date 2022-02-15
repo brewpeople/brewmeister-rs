@@ -18,7 +18,6 @@ pub struct Device {
 /// Recipe step.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Step {
-    pub description: String,
     pub target_temperature: f32,
     pub duration: std::time::Duration,
 }
