@@ -37,7 +37,7 @@ impl FromStr for RecipeId {
     type Err = <i64 as FromStr>::Err;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        s.parse::<i64>().map(|x| Self(x))
+        s.parse::<i64>().map(Self)
     }
 }
 

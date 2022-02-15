@@ -14,8 +14,8 @@ enum Step {
 
 #[function_component(NewRecipe)]
 pub fn new_recipe() -> Html {
-    let name = use_state(|| String::default());
-    let steps = use_state(|| Vec::<Step>::default());
+    let name = use_state(String::default);
+    let steps = use_state(Vec::<Step>::default);
 
     let cloned_name = name.clone();
 
