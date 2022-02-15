@@ -6,7 +6,6 @@ mod pages;
 
 use anyhow::Result;
 use components::Temperature;
-use components::ThemeSwitch;
 use gloo::timers::callback::Interval;
 use log::error;
 use reqwasm::http;
@@ -38,7 +37,6 @@ enum Message {
 
 struct Model {
     device: Arc<RwLock<models::Device>>,
-    dark_mode: Arc<RwLock<bool>>,
     _interval: Interval,
 }
 
@@ -60,7 +58,6 @@ impl Component for Model {
 
         Self {
             device: Arc::new(RwLock::new(models::Device::default())),
-            dark_mode: Arc::new(RwLock::new(false)),
             _interval: interval,
         }
     }
@@ -104,31 +101,12 @@ impl Component for Model {
             (None, None)
         };
 
-        let on_theme_switch = {
-            let dark_mode = self.dark_mode.clone();
-
-            Callback::from(move |checked: bool| {
-                *dark_mode.write().unwrap() = !checked;
-
-                let attribute = if checked { "dark" } else { "light" };
-
-                gloo_utils::document()
-                    .document_element()
-                    .unwrap()
-                    .set_attribute("data-theme", attribute)
-                    .unwrap();
-            })
-        };
-
-        let dark_mode = *self.dark_mode.clone().read().unwrap();
-
         html! {
             <div>
                 <header class="header">
                     <div class="center">
                         <Temperature temperature={current} emphasize=true/>
                         <Temperature temperature={target} emphasize=false/>
-                        <ThemeSwitch checked={dark_mode} on_click={on_theme_switch}/>
                     </div>
                 </header>
                 <main class="center">
