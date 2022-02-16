@@ -89,7 +89,7 @@ async fn get_recipes(Extension(state): Extension<State>) -> Result<Json<models::
 
 #[instrument(skip_all)]
 async fn get_recipe(
-    Path(id): Path<i64>,
+    Path(id): Path<models::RecipeId>,
     Extension(state): Extension<State>,
 ) -> Result<Json<models::Recipe>> {
     let recipe = state.db.recipe(id).await?;
@@ -120,7 +120,10 @@ async fn post_brew(
 }
 
 #[instrument(skip(state))]
-async fn start_brew(Path(id): Path<i64>, Extension(state): Extension<State>) -> Result<()> {
+async fn start_brew(
+    Path(id): Path<models::BrewId>,
+    Extension(state): Extension<State>,
+) -> Result<()> {
     debug!("Start brew");
 
     let steps = state.db.recipe_for_brew(id).await?.steps;

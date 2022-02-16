@@ -12,7 +12,7 @@ type Responder<T> = oneshot::Sender<Result<T>>;
 /// Commands to send to the program channel.
 pub enum Command {
     Start {
-        id: i64,
+        id: models::BrewId,
         steps: Vec<models::Step>,
         resp: Responder<()>,
     },
@@ -39,7 +39,7 @@ async fn read_temperature(tx: devices::Sender) -> Result<Option<f32>> {
 
 #[instrument(skip(tx))]
 async fn wait_for(
-    id: i64,
+    id: models::BrewId,
     tx: devices::Sender,
     temperature: f32,
     db: crate::db::Database,
@@ -71,7 +71,7 @@ async fn wait_for(
 /// Run the given program `steps` until completion.
 #[instrument(skip_all)]
 async fn run_program(
-    id: i64,
+    id: models::BrewId,
     tx: devices::Sender,
     steps: Vec<models::Step>,
     db: crate::db::Database,

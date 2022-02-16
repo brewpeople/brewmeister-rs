@@ -83,7 +83,7 @@ pub struct NewBrew {
 }
 
 /// Brew identifier newtype.
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Copy, Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct BrewId(i64);
 
 impl From<i64> for BrewId {

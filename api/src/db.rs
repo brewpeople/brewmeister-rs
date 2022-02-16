@@ -88,7 +88,9 @@ impl Database {
 
     /// Get recipe by id.
     #[instrument]
-    pub async fn recipe(&self, id: i64) -> Result<models::Recipe> {
+    pub async fn recipe(&self, id: models::RecipeId) -> Result<models::Recipe> {
+        let id: i64 = id.into();
+
         let recipe = sqlx::query_as::<_, Recipe>("SELECT * FROM recipes WHERE id = ?")
             .bind(id)
             .fetch_one(&self.pool)
@@ -163,24 +165,27 @@ impl Database {
 
     /// Get recipe by id.
     #[instrument]
-    pub async fn recipe_for_brew(&self, brew_id: i64) -> Result<models::Recipe> {
+    pub async fn recipe_for_brew(&self, id: models::BrewId) -> Result<models::Recipe> {
+        let id: i64 = id.into();
+
         let brew = sqlx::query_as::<_, Brew>("SELECT recipe_id from brews WHERE id = ?")
-            .bind(brew_id)
+            .bind(id)
             .fetch_one(&self.pool)
             .await?;
 
-        self.recipe(brew.recipe_id).await
+        self.recipe(brew.recipe_id.into()).await
     }
 
     /// Add new sample.
     #[instrument]
-    pub async fn add_sample(&self, brew_id: i64, temperature: f32) -> Result<()> {
+    pub async fn add_sample(&self, id: models::BrewId, temperature: f32) -> Result<()> {
+        let id: i64 = id.into();
         let timestamp = SystemTime::now().duration_since(UNIX_EPOCH)?;
 
         sqlx::query(
             "INSERT INTO brew_measurements (brew_id, timestamp, brew_temperature) VALUES (?, ?, ?)",
         )
-        .bind(brew_id)
+        .bind(id)
         .bind(timestamp.as_secs() as i64)
         .bind(temperature)
         .execute(&self.pool)
