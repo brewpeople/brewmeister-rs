@@ -117,7 +117,7 @@ async fn start_brew(
 
     let recipe = state.db.recipe(payload.id).await?;
     let result = state.db.add_brew(recipe.id).await?;
-    let (resp, _) = oneshot::channel();
+    let (resp, rx) = oneshot::channel();
 
     let command = program::Command::Start {
         id: result.id,
@@ -126,8 +126,7 @@ async fn start_brew(
     };
 
     let _ = state.brew_tx.send(command).await;
-
-    Ok(())
+    Ok(rx.await??)
 }
 
 #[instrument]

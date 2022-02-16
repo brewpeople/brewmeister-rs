@@ -23,6 +23,8 @@ struct Opt {
 pub enum AppError {
     #[error("Address parse failed: {0}")]
     AddrParseError(#[from] std::net::AddrParseError),
+    #[error("Brew is ongoing")]
+    BrewOngoing,
     #[error("Serial communication error: {0}")]
     CommError(#[from] comm::Error),
     #[error("Could not read configuration: {0}")]

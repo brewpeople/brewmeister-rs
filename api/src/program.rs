@@ -1,10 +1,11 @@
 //! Executes a brew "program", i.e. set target temperatures and wait until they are reached and
 //! then wait more until the required duration has passed.
 
-use crate::{devices, Result};
+use crate::{devices, AppError, Result};
+use std::sync::{Arc, Mutex};
 use tokio::sync::{mpsc, oneshot};
 use tokio::time::{sleep, Duration};
-use tracing::{info, instrument, warn};
+use tracing::{error, info, instrument, warn};
 
 /// Used by the caller to get a result back from a command.
 type Responder<T> = oneshot::Sender<Result<T>>;
@@ -98,13 +99,35 @@ pub async fn run(
     mut rx: mpsc::Receiver<Command>,
     db: crate::db::Database,
 ) -> Result<()> {
+    let running = Arc::new(Mutex::new(false));
+
     while let Some(command) = rx.recv().await {
         let cloned = tx.clone();
 
         match command {
             Command::Start { id, steps, resp } => {
-                // TODO: check if we are already running a brew program.
-                let _ = resp.send(run_program(id, cloned, steps, db.clone()).await);
+                let mut locked_running = running.lock().unwrap();
+
+                if *locked_running {
+                    warn!("Brew is ongoing");
+                    let _ = resp.send(Err(AppError::BrewOngoing));
+                    continue;
+                }
+
+                *locked_running = true;
+
+                let db = db.clone();
+                let running = running.clone();
+
+                tokio::spawn(async move {
+                    if let Err(err) = run_program(id, cloned, steps, db).await {
+                        error!("{}", err);
+                    }
+
+                    *running.lock().unwrap() = false;
+                });
+
+                let _ = resp.send(Ok(()));
             }
         }
     }
