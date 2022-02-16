@@ -11,6 +11,7 @@ use include_dir::{include_dir, Dir};
 use tokio::sync::oneshot;
 use tower::ServiceBuilder;
 use tower_http::cors::{CorsLayer, Origin};
+use tower_http::trace::TraceLayer;
 use tracing::{debug, instrument, warn};
 
 static DIST_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../app/dist");
@@ -156,6 +157,10 @@ pub async fn run(state: State) -> Result<()> {
         .allow_origin(Origin::exact("http://0.0.0.0:8080".parse()?))
         .allow_methods(vec![Method::GET, Method::POST]);
 
+    let trace = TraceLayer::new_for_http();
+
+    let extension = AddExtensionLayer::new(state);
+
     let app = Router::new()
         .route(
             "/",
@@ -166,8 +171,12 @@ pub async fn run(state: State) -> Result<()> {
         .route("/api/recipes", get(get_recipes).post(post_recipe))
         .route("/api/recipes/:id", get(get_recipe))
         .route("/api/state", get(get_state))
-        .layer(cors)
-        .layer(ServiceBuilder::new().layer(AddExtensionLayer::new(state)));
+        .layer(
+            ServiceBuilder::new()
+                .layer(trace)
+                .layer(cors)
+                .layer(extension),
+        );
 
     axum::Server::bind(&"0.0.0.0:3000".parse()?)
         .serve(app.into_make_service())
