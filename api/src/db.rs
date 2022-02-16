@@ -151,29 +151,16 @@ impl Database {
 
     /// Add a brew.
     #[instrument]
-    pub async fn add_brew(&self, brew: models::NewBrew) -> Result<models::NewBrewResponse> {
-        let brew_id: i64 = brew.id.into();
+    pub async fn add_brew(&self, id: models::RecipeId) -> Result<models::NewBrewResponse> {
+        let id: i64 = id.into();
 
         let id = sqlx::query("INSERT INTO brews (recipe_id) VALUES (?)")
-            .bind(brew_id)
+            .bind(id)
             .execute(&self.pool)
             .await?
             .last_insert_rowid();
 
         Ok(models::NewBrewResponse { id: id.into() })
-    }
-
-    /// Get recipe by id.
-    #[instrument]
-    pub async fn recipe_for_brew(&self, id: models::BrewId) -> Result<models::Recipe> {
-        let id: i64 = id.into();
-
-        let brew = sqlx::query_as::<_, Brew>("SELECT recipe_id from brews WHERE id = ?")
-            .bind(id)
-            .fetch_one(&self.pool)
-            .await?;
-
-        self.recipe(brew.recipe_id.into()).await
     }
 
     /// Add new sample.

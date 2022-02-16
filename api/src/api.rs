@@ -108,27 +108,23 @@ async fn post_recipe(
     Ok(Json(result))
 }
 
-#[instrument(skip_all)]
-async fn post_brew(
-    Json(payload): Json<models::NewBrew>,
-    Extension(state): Extension<State>,
-) -> Result<Json<models::NewBrewResponse>> {
-    debug!("New brew {:?}", payload);
-
-    let result = state.db.add_brew(payload).await?;
-    Ok(Json(result))
-}
-
 #[instrument(skip(state))]
 async fn start_brew(
-    Path(id): Path<models::BrewId>,
+    Json(payload): Json<models::NewBrew>,
     Extension(state): Extension<State>,
 ) -> Result<()> {
     debug!("Start brew");
 
-    let steps = state.db.recipe_for_brew(id).await?.steps;
+    let recipe = state.db.recipe(payload.id).await?;
+    let result = state.db.add_brew(recipe.id).await?;
     let (resp, _) = oneshot::channel();
-    let command = program::Command::Start { id, steps, resp };
+
+    let command = program::Command::Start {
+        id: result.id,
+        steps: recipe.steps,
+        resp,
+    };
+
     let _ = state.brew_tx.send(command).await;
 
     Ok(())
@@ -167,8 +163,7 @@ pub async fn run(state: State) -> Result<()> {
             get(|| async { get_static(Path("index.html".into())).await }),
         )
         .route("/:key", get(get_static))
-        .route("/api/brews", post(post_brew))
-        .route("/api/brews/:id", post(start_brew))
+        .route("/api/brews", post(start_brew))
         .route("/api/recipes", get(get_recipes).post(post_recipe))
         .route("/api/recipes/:id", get(get_recipe))
         .route("/api/state", get(get_state))
