@@ -35,7 +35,27 @@ pub fn recipe(Props { id }: &Props) -> Html {
         );
     }
 
+    let id: models::RecipeId = (*id).into();
+
+    let on_start = Callback::from(move |_| {
+        wasm_bindgen_futures::spawn_local(async move {
+            let body = serde_json::to_string(&models::NewBrew { id }).unwrap();
+
+            let resp = Request::post("/api/brews")
+                .header("Content-Type", "application/json")
+                .body(body)
+                .send()
+                .await
+                .unwrap();
+
+            log::info!("{:?}", resp);
+        });
+    });
+
     html! {
+        <>
         <components::Recipe recipe={(*recipe).clone()} />
+        <button onclick={on_start}>{"start"}</button>
+        </>
     }
 }

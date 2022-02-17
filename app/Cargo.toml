@@ -11,6 +11,8 @@ gloo-utils = "0"
 log = "0"
 models = { path = "../models" }
 reqwasm = "0"
+serde = { version = "1", features = ["derive"] }
+serde_json = { verson = "1" }
 wasm-bindgen = "0"
 wasm-bindgen-futures = "0"
 wasm-logger = "0"
