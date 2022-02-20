@@ -127,7 +127,7 @@ async fn start_brew(
     };
 
     let _ = state.brew_tx.send(command).await;
-    Ok(rx.await??)
+    rx.await?
 }
 
 #[instrument]

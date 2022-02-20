@@ -2,7 +2,8 @@
 //! then wait more until the required duration has passed.
 
 use crate::{devices, AppError, Result};
-use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use tokio::sync::{mpsc, oneshot};
 use tokio::time::{sleep, Duration};
 use tracing::{error, info, instrument, warn};
@@ -99,32 +100,31 @@ pub async fn run(
     mut rx: mpsc::Receiver<Command>,
     db: crate::db::Database,
 ) -> Result<()> {
-    let running = Arc::new(Mutex::new(false));
+    let running = Arc::new(AtomicBool::new(false));
 
     while let Some(command) = rx.recv().await {
         let cloned = tx.clone();
 
         match command {
             Command::Start { id, steps, resp } => {
-                let mut locked_running = running.lock().unwrap();
-
-                if *locked_running {
+                if running.load(Ordering::Relaxed) {
                     warn!("Brew is ongoing");
                     let _ = resp.send(Err(AppError::BrewOngoing));
                     continue;
                 }
 
-                *locked_running = true;
+                running.store(true, Ordering::Relaxed);
 
                 let db = db.clone();
-                let running = running.clone();
+
+                let cloned_running = running.clone();
 
                 tokio::spawn(async move {
                     if let Err(err) = run_program(id, cloned, steps, db).await {
                         error!("{}", err);
                     }
 
-                    *running.lock().unwrap() = false;
+                    cloned_running.store(false, Ordering::Relaxed);
                 });
 
                 let _ = resp.send(Ok(()));

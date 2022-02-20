@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use axum::http::header::InvalidHeaderValue;
 use clap::Parser;
 use thiserror::Error;
