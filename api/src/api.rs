@@ -149,6 +149,11 @@ async fn get_static(Path(path): Path<String>) -> (StatusCode, HeaderMap, Vec<u8>
     }
 }
 
+#[instrument]
+async fn get_index() -> (StatusCode, HeaderMap, Vec<u8>) {
+    get_static(Path("index.html".into())).await
+}
+
 /// Start the web server.
 #[instrument]
 pub async fn run(state: State) -> Result<()> {
@@ -162,10 +167,7 @@ pub async fn run(state: State) -> Result<()> {
     let extension = AddExtensionLayer::new(state);
 
     let app = Router::new()
-        .route(
-            "/",
-            get(|| async { get_static(Path("index.html".into())).await }),
-        )
+        .route("/", get(get_index))
         .route("/:key", get(get_static))
         .route("/api/brews", post(start_brew))
         .route("/api/recipes", get(get_recipes).post(post_recipe))
