@@ -12,6 +12,7 @@ use tokio::sync::oneshot;
 use tower::ServiceBuilder;
 use tower_http::cors::{CorsLayer, Origin};
 use tower_http::trace::TraceLayer;
+use tower_http::compression::CompressionLayer;
 use tracing::{debug, instrument, warn};
 
 static DIST_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../app/dist");
@@ -166,6 +167,8 @@ pub async fn run(state: State) -> Result<()> {
 
     let extension = AddExtensionLayer::new(state);
 
+    let compression = CompressionLayer::new().gzip(true).deflate(true);
+
     let app = Router::new()
         .route("/", get(get_index))
         .route("/:key", get(get_static))
@@ -175,6 +178,7 @@ pub async fn run(state: State) -> Result<()> {
         .route("/api/state", get(get_state))
         .layer(
             ServiceBuilder::new()
+                .layer(compression)
                 .layer(trace)
                 .layer(cors)
                 .layer(extension),
