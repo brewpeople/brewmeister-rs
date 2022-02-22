@@ -19,7 +19,7 @@ pub fn temperature(props: &TemperatureProps) -> Html {
             <span class={classes!(class)}>{ &temperature.round() }{ "°C" }</span>
         },
         None => html! {
-            <span class={classes!(class)}>{ "ERR" }</span>
+            <span class={classes!("deactivated", class)}>{ "– °C" }</span>
         },
     }
 }

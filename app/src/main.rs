@@ -5,7 +5,7 @@ mod components;
 mod pages;
 
 use anyhow::Result;
-use components::Temperature;
+use components::Header;
 use gloo::timers::callback::Interval;
 use log::error;
 use reqwasm::http;
@@ -91,22 +91,11 @@ impl Component for Model {
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
-        let state = self.device.clone().read().unwrap().clone();
-
-        let (current, target) = if !state.serial_problem {
-            (state.current_temperature, state.target_temperature)
-        } else {
-            (None, None)
-        };
+        let device = self.device.clone().read().unwrap().clone();
 
         html! {
             <div>
-                <header class="header">
-                    <div class="center">
-                        <Temperature temperature={current} emphasize=true/>
-                        <Temperature temperature={target} emphasize=false/>
-                    </div>
-                </header>
+                <Header device={device}/>
                 <main class="center">
                     <BrowserRouter>
                         <Switch<Route> render={Switch::render(switch)} />

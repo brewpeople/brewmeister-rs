@@ -4,7 +4,7 @@ use std::fmt::Display;
 use std::str::FromStr;
 
 /// Device state.
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
 pub struct Device {
     /// Current temperature or `None` if sensor reading failed.
     pub current_temperature: Option<f32>,
