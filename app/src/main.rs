@@ -24,8 +24,6 @@ enum Route {
     Recipes,
     #[at("/recipes/new")]
     NewRecipe,
-    #[at("/new")]
-    NewBrew,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -122,7 +120,6 @@ impl Component for Model {
 fn switch(routes: &Route) -> Html {
     match routes {
         Route::Home => html! { <pages::Home/> },
-        Route::NewBrew => html! { <pages::NewBrew/> },
         Route::NewRecipe => html! { <pages::NewRecipe/> },
         Route::NotFound => html! { <pages::NotFound/> },
         Route::Recipes => html! { <pages::Recipes/> },

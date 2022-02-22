@@ -14,7 +14,7 @@ impl Component for Home {
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
-            <Link<Route> to={Route::NewBrew}>{ "Sud starten" }</Link<Route>>
+            <Link<Route> to={Route::Recipes}>{ "Recipes" }</Link<Route>>
         }
     }
 }

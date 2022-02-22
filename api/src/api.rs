@@ -10,9 +10,9 @@ use axum::{AddExtensionLayer, Json, Router};
 use include_dir::{include_dir, Dir};
 use tokio::sync::oneshot;
 use tower::ServiceBuilder;
+use tower_http::compression::CompressionLayer;
 use tower_http::cors::{CorsLayer, Origin};
 use tower_http::trace::TraceLayer;
-use tower_http::compression::CompressionLayer;
 use tracing::{debug, instrument, warn};
 
 static DIST_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../app/dist");
