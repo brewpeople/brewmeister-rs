@@ -1,5 +1,5 @@
-use yew::prelude::*;
 use crate::components::Temperature;
+use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
@@ -8,7 +8,6 @@ pub struct Props {
 
 #[function_component(Header)]
 pub fn header(Props { device }: &Props) -> Html {
-
     html! {
         <header class="header">
             <div class="center">
