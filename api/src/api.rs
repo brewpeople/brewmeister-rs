@@ -1,13 +1,14 @@
 use crate::{db, devices, program, AppError, Result};
 use axum::body;
-use axum::extract::{Extension, Path};
+use axum::extract::Extension;
 use axum::headers::{HeaderMap, HeaderValue};
 use axum::http::header::CONTENT_TYPE;
 use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, post};
 use axum::{AddExtensionLayer, Json, Router};
+use axum_extra::routing::{RouterExt, TypedPath};
 use include_dir::{include_dir, Dir};
+use serde::Deserialize;
 use tokio::sync::oneshot;
 use tower::ServiceBuilder;
 use tower_http::compression::CompressionLayer;
@@ -75,23 +76,43 @@ fn insert_header_from_extension(map: &mut HeaderMap, ext: &str) {
     }
 }
 
+#[derive(TypedPath, Deserialize)]
+#[typed_path("/api/state")]
+struct StateRoute;
+
 #[instrument]
-async fn get_state(Extension(state): Extension<State>) -> Result<Json<models::Device>> {
+async fn get_state(
+    _: StateRoute,
+    Extension(state): Extension<State>,
+) -> Result<Json<models::Device>> {
     let (resp, rx) = oneshot::channel();
     let command = devices::Command::Read { resp };
     let _ = state.device_tx.send(command).await;
     Ok(Json(rx.await??))
 }
 
+#[derive(TypedPath, Deserialize)]
+#[typed_path("/api/recipes")]
+struct RecipesRoute;
+
 #[instrument(skip_all)]
-async fn get_recipes(Extension(state): Extension<State>) -> Result<Json<models::Recipes>> {
+async fn get_recipes(
+    _: RecipesRoute,
+    Extension(state): Extension<State>,
+) -> Result<Json<models::Recipes>> {
     let recipes = state.db.recipes().await?;
     Ok(Json(recipes))
 }
 
+#[derive(TypedPath, Deserialize)]
+#[typed_path("/api/recipes/:id")]
+struct RecipeRoute {
+    id: models::RecipeId,
+}
+
 #[instrument(skip_all)]
 async fn get_recipe(
-    Path(id): Path<models::RecipeId>,
+    RecipeRoute { id }: RecipeRoute,
     Extension(state): Extension<State>,
 ) -> Result<Json<models::Recipe>> {
     let recipe = state.db.recipe(id).await?;
@@ -101,6 +122,7 @@ async fn get_recipe(
 
 #[instrument(skip_all)]
 async fn post_recipe(
+    _: RecipesRoute,
     Json(payload): Json<models::NewRecipe>,
     Extension(state): Extension<State>,
 ) -> Result<Json<models::NewRecipeResponse>> {
@@ -110,8 +132,13 @@ async fn post_recipe(
     Ok(Json(result))
 }
 
+#[derive(TypedPath)]
+#[typed_path("/api/brews")]
+struct BrewsRoute;
+
 #[instrument(skip(state))]
 async fn start_brew(
+    _: BrewsRoute,
     Json(payload): Json<models::NewBrew>,
     Extension(state): Extension<State>,
 ) -> Result<()> {
@@ -131,8 +158,14 @@ async fn start_brew(
     rx.await?
 }
 
+#[derive(TypedPath, Deserialize)]
+#[typed_path("/:path")]
+struct StaticFileRoute {
+    path: String,
+}
+
 #[instrument]
-async fn get_static(Path(path): Path<String>) -> (StatusCode, HeaderMap, Vec<u8>) {
+async fn get_static(StaticFileRoute { path }: StaticFileRoute) -> (StatusCode, HeaderMap, Vec<u8>) {
     let mut headers = HeaderMap::new();
 
     match DIST_DIR.get_file(&path) {
@@ -150,9 +183,16 @@ async fn get_static(Path(path): Path<String>) -> (StatusCode, HeaderMap, Vec<u8>
     }
 }
 
+#[derive(TypedPath, Deserialize)]
+#[typed_path("/")]
+struct IndexRoute;
+
 #[instrument]
-async fn get_index() -> (StatusCode, HeaderMap, Vec<u8>) {
-    get_static(Path("index.html".into())).await
+async fn get_index(_: IndexRoute) -> (StatusCode, HeaderMap, Vec<u8>) {
+    get_static(StaticFileRoute {
+        path: "index.html".to_string(),
+    })
+    .await
 }
 
 /// Start the web server.
@@ -170,12 +210,13 @@ pub async fn run(state: State) -> Result<()> {
     let compression = CompressionLayer::new().gzip(true).deflate(true);
 
     let app = Router::new()
-        .route("/", get(get_index))
-        .route("/:key", get(get_static))
-        .route("/api/brews", post(start_brew))
-        .route("/api/recipes", get(get_recipes).post(post_recipe))
-        .route("/api/recipes/:id", get(get_recipe))
-        .route("/api/state", get(get_state))
+        .typed_get(get_index)
+        .typed_get(get_static)
+        .typed_post(start_brew)
+        .typed_get(get_recipes)
+        .typed_post(post_recipe)
+        .typed_get(get_recipe)
+        .typed_get(get_state)
         .layer(
             ServiceBuilder::new()
                 .layer(compression)

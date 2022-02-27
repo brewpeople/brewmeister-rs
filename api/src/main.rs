@@ -48,7 +48,7 @@ pub enum AppError {
 }
 
 /// API result type.
-pub type Result<T> = std::result::Result<T, AppError>;
+pub type Result<T, E = AppError> = std::result::Result<T, E>;
 
 async fn try_main() -> Result<()> {
     let opts = Opt::parse();
