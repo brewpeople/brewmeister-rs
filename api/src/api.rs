@@ -5,7 +5,7 @@ use axum::headers::{HeaderMap, HeaderValue};
 use axum::http::header::CONTENT_TYPE;
 use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Response};
-use axum::{AddExtensionLayer, Json, Router};
+use axum::{Json, Router};
 use axum_extra::routing::{RouterExt, TypedPath};
 use include_dir::{include_dir, Dir};
 use serde::Deserialize;
@@ -205,8 +205,6 @@ pub async fn run(state: State) -> Result<()> {
 
     let trace = TraceLayer::new_for_http();
 
-    let extension = AddExtensionLayer::new(state);
-
     let compression = CompressionLayer::new().gzip(true).deflate(true);
 
     let app = Router::new()
@@ -222,7 +220,7 @@ pub async fn run(state: State) -> Result<()> {
                 .layer(compression)
                 .layer(trace)
                 .layer(cors)
-                .layer(extension),
+                .layer(Extension(state)),
         );
 
     axum::Server::bind(&"0.0.0.0:3000".parse()?)
