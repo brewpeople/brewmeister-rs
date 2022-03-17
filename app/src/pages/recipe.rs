@@ -1,5 +1,5 @@
 use crate::components;
-use reqwasm::http::Request;
+use gloo_net::http::Request;
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]

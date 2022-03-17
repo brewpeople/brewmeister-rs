@@ -7,10 +7,10 @@ edition = "2021"
 anyhow = "1"
 futures = "0"
 gloo = "0"
+gloo-net = "0"
 gloo-utils = "0"
 log = "0"
 models = { path = "../models" }
-reqwasm = "0"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
 wasm-bindgen = "0"

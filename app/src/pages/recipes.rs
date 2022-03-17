@@ -1,5 +1,5 @@
 use crate::components::RecipesList;
-use reqwasm::http::Request;
+use gloo_net::http::Request;
 use yew::prelude::*;
 
 #[function_component(Recipes)]
