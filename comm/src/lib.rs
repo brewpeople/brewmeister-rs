@@ -118,7 +118,7 @@ impl Comm {
         LittleEndian::write_f32(&mut command[1..], temperature);
 
         let mut stream = self.stream.write().await;
-        stream.write(&command).await?;
+        stream.write_all(&command).await?;
         ack_byte_to(stream.read_u8().await?)
     }
 
