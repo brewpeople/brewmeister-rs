@@ -225,6 +225,11 @@ pub async fn run(state: State) -> Result<()> {
 
     axum::Server::bind(&"0.0.0.0:3000".parse()?)
         .serve(app.into_make_service())
+        .with_graceful_shutdown(async {
+            tokio::signal::ctrl_c()
+                .await
+                .expect("failed to listen to ctrl-c");
+        })
         .await?;
 
     Ok(())
