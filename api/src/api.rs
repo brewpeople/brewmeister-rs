@@ -12,7 +12,7 @@ use serde::Deserialize;
 use tokio::sync::oneshot;
 use tower::ServiceBuilder;
 use tower_http::compression::CompressionLayer;
-use tower_http::cors::{CorsLayer, Origin};
+use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 use tracing::{debug, instrument, warn};
 
@@ -200,7 +200,7 @@ async fn get_index(_: IndexRoute) -> (StatusCode, HeaderMap, Vec<u8>) {
 pub async fn run(state: State) -> Result<()> {
     // Only useful if we run the app via `trunk serve`, if not we serve the static files directly.
     let cors = CorsLayer::new()
-        .allow_origin(Origin::exact("http://0.0.0.0:8080".parse()?))
+        .allow_origin("http://0.0.0.0:8080".parse::<HeaderValue>()?)
         .allow_methods(vec![Method::GET, Method::POST]);
 
     let trace = TraceLayer::new_for_http();
