@@ -16,7 +16,6 @@ impl Brewslave {
     }
 }
 
-#[async_trait::async_trait]
 impl Device for Brewslave {
     /// Set up the serial connection and poll for new temperature, stirrer and heater values.
     #[instrument(skip_all)]

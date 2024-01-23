@@ -27,7 +27,6 @@ impl Mock {
     }
 }
 
-#[async_trait::async_trait]
 impl Device for Mock {
     #[instrument]
     async fn read(&self) -> Result<models::Device> {
