@@ -12,7 +12,7 @@ tokio-serial = "5"
 
 [dev-dependencies]
 anyhow = "1"
-clap = { version = "3", features = ["derive"] }
+clap = { version = "4", features = ["derive"] }
 env_logger = "0"
 indicatif = "0"
 rand = "0"
