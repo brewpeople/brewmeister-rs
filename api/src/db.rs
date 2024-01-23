@@ -135,7 +135,7 @@ impl Database {
                 )
                 .bind(id)
                 .bind(pos as i64)
-                .bind(&step.target_temperature)
+                .bind(step.target_temperature)
                 .bind(step.duration.as_secs() as i64)
                 .execute(&self.pool)
                 .await?;

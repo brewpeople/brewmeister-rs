@@ -1,2 +1,3 @@
 [workspace]
 members = ["api", "app", "comm", "models"]
+resolver = "2"
