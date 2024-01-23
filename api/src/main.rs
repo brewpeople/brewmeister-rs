@@ -31,8 +31,6 @@ pub enum AppError {
     CommError(#[from] comm::Error),
     #[error("Could not read configuration: {0}")]
     ConfigurationError(#[from] toml::de::Error),
-    #[error("Hyper error: {0}")]
-    HyperError(#[from] hyper::Error),
     #[error("Internal error: {0}")]
     RecvError(#[from] oneshot::error::RecvError),
     #[error("Invalid header: {0}")]
@@ -59,7 +57,7 @@ async fn try_main() -> Result<()> {
 
     let db = db::Database::new(config.database).await?;
     let brew_future = program::run(device_tx.clone(), brew_rx, db.clone());
-    let state = api::State::new(db, device_tx, brew_tx).await?;
+    let state = api::AppState::new(db, device_tx, brew_tx).await?;
     let server_future = api::run(state);
 
     if opts.use_mock {
