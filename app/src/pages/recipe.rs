@@ -44,6 +44,7 @@ pub fn recipe(Props { id }: &Props) -> Html {
             let resp = Request::post("/api/brews")
                 .header("Content-Type", "application/json")
                 .body(body)
+                .unwrap()
                 .send()
                 .await
                 .unwrap();
